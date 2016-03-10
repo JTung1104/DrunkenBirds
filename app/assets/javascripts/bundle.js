@@ -101,8 +101,9 @@
 
 	    this.game.paused = true;
 	  }
-
-	  this.game.tick++;
+	  if (!this.game.paused) {
+	    this.game.tick++;
+	  }
 	};
 	module.exports = GameView;
 
@@ -555,8 +556,6 @@
 	  this.srcX = frame * 64;
 
 	  ctx.drawImage(this.img, this.srcX, this.srcY * 64, 64, 64, this.pos[0] - 32, this.pos[1] - 32, 64, 64);
-
-	  this.game.tick++;
 	};
 
 	module.exports = Ship;

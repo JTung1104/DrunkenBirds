@@ -60,6 +60,7 @@
 /***/ function(module, exports, __webpack_require__) {
 
 	var Game = __webpack_require__(2),
+	    Text = __webpack_require__(9),
 	    KeyHandler = __webpack_require__(8);
 
 	var GameView = function (game, ctx) {
@@ -92,6 +93,12 @@
 	  requestAnimationFrame(this.animate.bind(this));
 
 	  if (this.game.over) {
+	    this.game.text = [new Text({
+	      color: "#CF4B2A",
+	      pos: [20, this.game.DIM_Y / 2 + 16],
+	      text: "Wow! Good Game! Press Enter To Play Again"
+	    })];
+
 	    this.game.paused = true;
 	  }
 	};
@@ -110,7 +117,7 @@
 	var Game = function () {
 	  this.DIM_X = 700;
 	  this.DIM_Y = 700;
-	  this.MAX_NUM_BIRDS = 5;
+	  this.MAX_NUM_BIRDS = 4;
 	  this.birds = this.addBirds();
 	  this.bullets = [];
 	  this.powers = [];
@@ -144,7 +151,7 @@
 	    birds.push(new DrunkenBird({
 	      pos: this.randomPosition(),
 	      game: this,
-	      vel: Util.randomVel(1, max)
+	      vel: Util.randomVel(1, 5)
 	    }));
 	  }
 
@@ -232,7 +239,7 @@
 	        this.score += 100 * this.level;
 	        this.level = Math.floor(this.score / 5000) + 1;
 
-	        if (Math.random() <= 0.10) {
+	        if (Math.random() <= 0.075) {
 	          this.powers.push(new Power({ pos: pos }));
 	        }
 	      }
@@ -265,15 +272,15 @@
 	  this.DIM_X = 700;
 	  this.DIM_Y = 700;
 	  this.MAX_NUM_BIRDS = 5;
+	  this.level = 1;
+	  this.over = false;
+	  this.paused = false;
 	  this.birds = this.addBirds();
 	  this.bullets = [];
 	  this.powers = [];
 	  this.text = [];
 	  this.ship = new Ship({ game: this, pos: [this.DIM_X / 2, this.DIM_Y - 75] });
-	  this.level = 1;
 	  this.score = 0;
-	  this.over = false;
-	  this.paused = false;
 	};
 
 	Game.prototype.handlePressedKeys = function () {
@@ -424,7 +431,9 @@
 	Util.inherits(Ship, MovingObject);
 
 	Ship.prototype.fireBullet = function (game) {
-	  if (this.fireBullet._lastFire + (350 - this.gunLevel * 10) < Date.now()) {
+	  var max = this.gunLevel * 10 > 200 ? 200 : this.gunLevel * 10;
+
+	  if (this.fireBullet._lastFire + (350 - max) < Date.now()) {
 	    if (this.gunLevel <= 2) {
 	      game.bullets.push(new Bullet({
 	        pos: [game.ship.pos[0], game.ship.pos[1] - 30],

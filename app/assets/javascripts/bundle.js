@@ -77,7 +77,7 @@
 	    if (!this.game.paused) {
 	      this.game.birds = this.game.birds.concat(this.game.addBirds());
 	    }
-	  }.bind(this), 5000);
+	  }.bind(this), 1000);
 
 	  this.animationToken = requestAnimationFrame(this.animate.bind(this));
 	};
@@ -101,6 +101,8 @@
 
 	    this.game.paused = true;
 	  }
+
+	  this.game.tick++;
 	};
 	module.exports = GameView;
 
@@ -125,8 +127,10 @@
 	  this.ship = new Ship({ game: this, pos: [this.DIM_X / 2, this.DIM_Y - 75] });
 	  this.level = 1;
 	  this.score = 0;
+	  this.pointsUntilLevel = 5000;
 	  this.over = false;
 	  this.paused = false;
+	  this.tick = 0;
 	};
 
 	var scoreEl = document.getElementById("score");
@@ -160,10 +164,11 @@
 
 	Game.prototype.randomPosition = function () {
 	  var posX = Math.floor(Math.random() * this.DIM_X) - 50;
+	  var posY = -Math.floor(Math.random() * this.DIM_Y);
 	  if (posX <= 0) {
 	    posX = 50;
 	  }
-	  return [posX, 0];
+	  return [posX, posY];
 	};
 
 	Game.prototype.draw = function (ctx) {
@@ -237,9 +242,13 @@
 
 	        this.bullets[i].collideWith(this.birds[j]);
 	        this.score += 100 * this.level;
-	        this.level = Math.floor(this.score / 5000) + 1;
+	        this.pointsUntilLevel -= 100 * this.level;
+	        if (this.pointsUntilLevel <= 0) {
+	          this.level += 1;
+	          this.pointsUntilLevel += this.score * this.level;
+	        }
 
-	        if (Math.random() <= 0.075) {
+	        if (Math.random() <= 0.05) {
 	          this.powers.push(new Power({ pos: pos }));
 	        }
 	      }
@@ -271,16 +280,18 @@
 	Game.prototype.restartGame = function () {
 	  this.DIM_X = 700;
 	  this.DIM_Y = 700;
-	  this.MAX_NUM_BIRDS = 5;
-	  this.level = 1;
-	  this.over = false;
-	  this.paused = false;
+	  this.MAX_NUM_BIRDS = 4;
 	  this.birds = this.addBirds();
 	  this.bullets = [];
 	  this.powers = [];
 	  this.text = [];
 	  this.ship = new Ship({ game: this, pos: [this.DIM_X / 2, this.DIM_Y - 75] });
+	  this.level = 1;
 	  this.score = 0;
+	  this.pointsUntilLevel = 5000;
+	  this.over = false;
+	  this.paused = false;
+	  this.tick = 0;
 	};
 
 	Game.prototype.handlePressedKeys = function () {
@@ -292,12 +303,15 @@
 	  if (!this.paused && !this.over) {
 	    if (window.isKeyPressed(37) && this.ship.vel[0] > -this.ship.maxSpeed) {
 	      this.ship.vel[0] -= 0.5;
+	      this.ship.srcY = 0;
 	    }
 	    if (window.isKeyPressed(38) && this.ship.vel[1] > -this.ship.maxSpeed) {
 	      this.ship.vel[1] -= 0.5;
+	      this.ship.srcY = 3;
 	    }
 	    if (window.isKeyPressed(39) && this.ship.vel[0] < this.ship.maxSpeed) {
 	      this.ship.vel[0] += 0.5;
+	      this.ship.srcY = 1;
 	    }
 	    if (window.isKeyPressed(40) && this.ship.vel[1] < this.ship.maxSpeed) {
 	      this.ship.vel[1] += 0.5;
@@ -308,6 +322,7 @@
 	  }
 	  if (!window.isKeyPressed(37) && !window.isKeyPressed(39)) {
 	    this.ship.vel[0] = 0;
+	    this.ship.srcY = 3;
 	  }
 	  if (!window.isKeyPressed(38) && !window.isKeyPressed(40)) {
 	    this.ship.vel[1] = 0;
@@ -327,17 +342,35 @@
 	    MovingObject = __webpack_require__(5);
 
 	var DrunkenBird = function (options) {
+	  this.img = new Image();
+	  this.img.src = "images/angry_birds.png";
+	  this.srcX = 20;
+	  this.srcY = 20;
 	  this.pos = options.pos;
 	  this.color = options.color || DrunkenBird.COLOR;
+	  this.strokeColor = options.strokeColor || DrunkenBird.STROKE_COLOR;
 	  this.radius = options.radius || DrunkenBird.RADIUS;
 	  this.game = options.game;
 	  this.vel = options.vel || Util.randomVel(1, 3);
 	};
 
 	DrunkenBird.COLOR = "#125688";
-	DrunkenBird.RADIUS = 25;
+	DrunkenBird.STROKE_COLOR = "#EDEEEE";
+	DrunkenBird.RADIUS = 30;
 
 	Util.inherits(DrunkenBird, MovingObject);
+
+	// DrunkenBird.prototype.draw = function (ctx) {
+	//   var frame = Math.floor((this.game.tick / 20)) % 2;
+	//   this.srcX = (frame * 100) + 20;
+	//   this.srcY = (Math.random() <= 0.5 ? 20 : 120);
+	//
+	//   ctx.drawImage(
+	//     this.img,
+	//     this.srcX, this.srcY, 80, 80,
+	//     this.pos[0] - 50, this.pos[1] - 50, 80, 80
+	//   );
+	// };
 
 	module.exports = DrunkenBird;
 
@@ -373,6 +406,7 @@
 	  this.vel = options.vel;
 	  this.radius = options.radius;
 	  this.color = options.color;
+	  this.strokeColor = options.strokeColor || options.color;
 	};
 
 	MovingObject.prototype.draw = function (ctx) {
@@ -380,6 +414,9 @@
 	  ctx.beginPath();
 	  ctx.arc(this.pos[0], this.pos[1], this.radius, 0, 2 * Math.PI);
 	  ctx.fill();
+	  ctx.strokeStyle = this.strokeColor;
+	  ctx.lineWidth = 2;
+	  ctx.stroke();
 	};
 
 	MovingObject.prototype.move = function (timeDelta) {
@@ -414,6 +451,11 @@
 	    Game = __webpack_require__(2);
 
 	var Ship = function (options) {
+	  this.img = new Image();
+	  this.tick = 0;
+	  this.img.src = "images/bird.png";
+	  this.srcX;
+	  this.srcY = 3;
 	  this.pos = options.pos;
 	  this.vel = [0, 0];
 	  this.color = options.color || Ship.COLOR;
@@ -426,7 +468,7 @@
 	};
 
 	Ship.COLOR = "#8BDAFC";
-	Ship.RADIUS = 25;
+	Ship.RADIUS = 30;
 
 	Util.inherits(Ship, MovingObject);
 
@@ -507,6 +549,16 @@
 	    this.pos[1] = newY;
 	  }
 	};
+
+	Ship.prototype.draw = function (ctx) {
+	  var frame = Math.floor(this.game.tick / 10) % 4;
+	  this.srcX = frame * 64;
+
+	  ctx.drawImage(this.img, this.srcX, this.srcY * 64, 64, 64, this.pos[0] - 32, this.pos[1] - 32, 64, 64);
+
+	  this.game.tick++;
+	};
+
 	module.exports = Ship;
 
 /***/ },

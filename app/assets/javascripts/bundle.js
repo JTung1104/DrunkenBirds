@@ -64,6 +64,7 @@
 
 	var GameView = function (game, ctx) {
 	  this.game = game;
+	  game.gameView = this;
 	  this.ctx = ctx;
 	  this.lastTime = this.lastTime || 0;
 	};
@@ -88,10 +89,10 @@
 	  this.game.draw(this.ctx);
 	  this.lastTime = currentTime;
 
-	  this.animationToken = requestAnimationFrame(this.animate.bind(this));
+	  requestAnimationFrame(this.animate.bind(this));
 
 	  if (this.game.over) {
-	    cancelAnimationFrame(this.animationToken);
+	    this.game.paused = true;
 	  }
 	};
 	module.exports = GameView;
@@ -102,7 +103,9 @@
 
 	var DrunkenBird = __webpack_require__(3),
 	    Ship = __webpack_require__(6),
-	    Text = __webpack_require__(9);
+	    Text = __webpack_require__(9),
+	    Util = __webpack_require__(4),
+	    Power = __webpack_require__(10);
 
 	var Game = function () {
 	  this.DIM_X = 700;
@@ -110,6 +113,7 @@
 	  this.MAX_NUM_BIRDS = 5;
 	  this.birds = this.addBirds();
 	  this.bullets = [];
+	  this.powers = [];
 	  this.text = [];
 	  this.ship = new Ship({ game: this, pos: [this.DIM_X / 2, this.DIM_Y - 75] });
 	  this.level = 1;
@@ -121,20 +125,26 @@
 	var scoreEl = document.getElementById("score");
 	var livesEl = document.getElementById("lives");
 	var levelEl = document.getElementById("level");
+	var gunLevelEl = document.getElementById("gunLevel");
 
 	Game.prototype.updateStats = function () {
 	  scoreEl.innerHTML = "Score: " + this.score;
 	  livesEl.innerHTML = "Lives: " + this.ship.lives;
 	  levelEl.innerHTML = "Level: " + this.level;
+	  gunLevelEl.innerHTML = "Gun Level: " + this.ship.gunLevel;
 	};
 
 	Game.prototype.addBirds = function () {
 	  var birds = [];
+	  var max;
 
-	  for (var i = 0; i < this.MAX_NUM_BIRDS * this.level; i++) {
+	  max = this.level > 10 ? 10 : this.level;
+
+	  for (var i = 0; i < this.MAX_NUM_BIRDS * max; i++) {
 	    birds.push(new DrunkenBird({
 	      pos: this.randomPosition(),
-	      game: this
+	      game: this,
+	      vel: Util.randomVel(1, max)
 	    }));
 	  }
 
@@ -167,6 +177,16 @@
 	  if (this.togglePause._lastPause + 300 < Date.now()) {
 	    this.paused = !this.paused;
 	    this.togglePause._lastPause = Date.now();
+
+	    if (this.paused) {
+	      this.text = [new Text({
+	        color: "white",
+	        pos: [this.DIM_X / 2 - 50, this.DIM_Y / 2 + 16],
+	        text: "PAUSED"
+	      })];
+	    } else {
+	      this.text = [];
+	    }
 	  }
 	};
 
@@ -182,26 +202,39 @@
 	  }.bind(this));
 
 	  this.bullets.forEach(function (bullet, i) {
-	    if (bullet.pos[0] < -3 || bullet.pos[0] > Game.DIM_X + 3) {
+	    if (bullet.pos[0] < -3 || bullet.pos[0] > this.DIM_X + 3) {
 	      this.bullets.splice(i, 1);
-	    } else if (bullet.pos[1] > this.DIM_Y + 50 || bullet.pos[1] < 0) {
+	    } else if (bullet.pos[1] > this.DIM_Y + 50 || bullet.pos[1] < -3) {
 	      this.bullets.splice(i, 1);
+	    }
+	  }.bind(this));
+
+	  this.powers.forEach(function (power, i) {
+	    if (power.pos[0] < -15 || power.pos[0] > this.DIM_X + 15) {
+	      this.powers.splice(i, 1);
+	    } else if (power.pos[1] > this.DIM_Y + 15 || power.pos[1] < -15) {
+	      this.powers.splice(i, 1);
 	    }
 	  }.bind(this));
 	};
 
 	Game.prototype.allObjects = function () {
-	  return this.birds.concat([this.ship], this.bullets, this.text);
+	  return this.birds.concat([this.ship], this.bullets, this.text, this.powers);
 	};
 
 	Game.prototype.checkCollisions = function () {
 	  for (var i = 0; i < this.bullets.length; i++) {
 	    for (var j = 0; j < this.birds.length; j++) {
 	      if (this.bullets[i].hasCollision(this.birds[j])) {
+	        var pos = this.birds[j].pos;
+
 	        this.bullets[i].collideWith(this.birds[j]);
 	        this.score += 100 * this.level;
-
 	        this.level = Math.floor(this.score / 5000) + 1;
+
+	        if (Math.random() <= 0.10) {
+	          this.powers.push(new Power({ pos: pos }));
+	        }
 	      }
 	    }
 	  }
@@ -209,6 +242,12 @@
 	  for (var k = 0; k < this.birds.length; k++) {
 	    if (this.ship.hasCollision(this.birds[k])) {
 	      this.ship.collideWith(this.birds[k]);
+	    }
+	  }
+
+	  for (var l = 0; l < this.powers.length; l++) {
+	    if (this.ship.hasCollision(this.powers[l])) {
+	      this.ship.collideWith(this.powers[l]);
 	    }
 	  }
 	};
@@ -222,30 +261,52 @@
 	  }
 	};
 
+	Game.prototype.restartGame = function () {
+	  this.DIM_X = 700;
+	  this.DIM_Y = 700;
+	  this.MAX_NUM_BIRDS = 5;
+	  this.birds = this.addBirds();
+	  this.bullets = [];
+	  this.powers = [];
+	  this.text = [];
+	  this.ship = new Ship({ game: this, pos: [this.DIM_X / 2, this.DIM_Y - 75] });
+	  this.level = 1;
+	  this.score = 0;
+	  this.over = false;
+	  this.paused = false;
+	};
+
 	Game.prototype.handlePressedKeys = function () {
-	  if (window.isKeyPressed(80)) {
-	    this.togglePause();
+	  if (!this.over) {
+	    if (window.isKeyPressed(80)) {
+	      this.togglePause();
+	    }
 	  }
-	  if (window.isKeyPressed(37) && this.ship.vel[0] > -this.ship.maxSpeed) {
-	    this.ship.vel[0] -= 0.5;
-	  }
-	  if (window.isKeyPressed(38) && this.ship.vel[1] > -this.ship.maxSpeed) {
-	    this.ship.vel[1] -= 0.5;
-	  }
-	  if (window.isKeyPressed(39) && this.ship.vel[0] < this.ship.maxSpeed) {
-	    this.ship.vel[0] += 0.5;
-	  }
-	  if (window.isKeyPressed(40) && this.ship.vel[1] < this.ship.maxSpeed) {
-	    this.ship.vel[1] += 0.5;
-	  }
-	  if (window.isKeyPressed(32)) {
-	    this.ship.fireBullet(this);
+	  if (!this.paused && !this.over) {
+	    if (window.isKeyPressed(37) && this.ship.vel[0] > -this.ship.maxSpeed) {
+	      this.ship.vel[0] -= 0.5;
+	    }
+	    if (window.isKeyPressed(38) && this.ship.vel[1] > -this.ship.maxSpeed) {
+	      this.ship.vel[1] -= 0.5;
+	    }
+	    if (window.isKeyPressed(39) && this.ship.vel[0] < this.ship.maxSpeed) {
+	      this.ship.vel[0] += 0.5;
+	    }
+	    if (window.isKeyPressed(40) && this.ship.vel[1] < this.ship.maxSpeed) {
+	      this.ship.vel[1] += 0.5;
+	    }
+	    if (window.isKeyPressed(32)) {
+	      this.ship.fireBullet(this);
+	    }
 	  }
 	  if (!window.isKeyPressed(37) && !window.isKeyPressed(39)) {
 	    this.ship.vel[0] = 0;
 	  }
 	  if (!window.isKeyPressed(38) && !window.isKeyPressed(40)) {
 	    this.ship.vel[1] = 0;
+	  }
+	  if (this.over && window.isKeyPressed(13)) {
+	    this.restartGame();
 	  }
 	};
 
@@ -267,7 +328,7 @@
 	};
 
 	DrunkenBird.COLOR = "#125688";
-	DrunkenBird.RADIUS = 50;
+	DrunkenBird.RADIUS = 25;
 
 	Util.inherits(DrunkenBird, MovingObject);
 
@@ -288,10 +349,7 @@
 	};
 
 	Util.randomVel = function (min, max) {
-	  // var velX = (Math.random() * max) * (Math.random() < 0.5 ? 1 : -1);
 	  var velY = Math.random() * max;
-
-	  // velX = (velX < min ? min : velX);
 	  velY = velY < min ? min : velY;
 
 	  return [0, velY];
@@ -343,7 +401,9 @@
 
 	var Util = __webpack_require__(4),
 	    Bullet = __webpack_require__(7),
+	    DrunkenBird = __webpack_require__(3),
 	    MovingObject = __webpack_require__(5),
+	    Power = __webpack_require__(10),
 	    Game = __webpack_require__(2);
 
 	var Ship = function (options) {
@@ -364,13 +424,36 @@
 	Util.inherits(Ship, MovingObject);
 
 	Ship.prototype.fireBullet = function (game) {
-	  if (this.fireBullet._lastFire + 300 < Date.now()) {
-	    game.bullets.push(new Bullet({
-	      pos: [game.ship.pos[0], game.ship.pos[1] - 30],
-	      vel: [0, -8],
-	      game: game
-	    }));
-
+	  if (this.fireBullet._lastFire + (350 - this.gunLevel * 10) < Date.now()) {
+	    if (this.gunLevel <= 2) {
+	      game.bullets.push(new Bullet({
+	        pos: [game.ship.pos[0], game.ship.pos[1] - 30],
+	        vel: [0, -8],
+	        game: game
+	      }));
+	    } else if (this.gunLevel >= 3) {
+	      game.bullets.push(new Bullet({
+	        pos: [game.ship.pos[0], game.ship.pos[1] - 30],
+	        vel: [0, -8],
+	        game: game,
+	        color: "#FFD394",
+	        radius: 5
+	      }));
+	      game.bullets.push(new Bullet({
+	        pos: [game.ship.pos[0], game.ship.pos[1] - 30],
+	        vel: [-4, -8],
+	        game: game,
+	        color: "#FFD394",
+	        radius: 5
+	      }));
+	      game.bullets.push(new Bullet({
+	        pos: [game.ship.pos[0], game.ship.pos[1] - 30],
+	        vel: [4, -8],
+	        game: game,
+	        color: "#FFD394",
+	        radius: 5
+	      }));
+	    }
 	    this.fireBullet._lastFire = Date.now();
 	  }
 	};
@@ -379,19 +462,24 @@
 
 	Ship.prototype.collideWith = function (object) {
 	  if (this.hasCollision(object)) {
-	    if (!this.invulnerable) {
-	      this.lives -= 1;
-	      this.invulnerable = true;
-	      this.color = "#FF9AD7";
+	    if (object instanceof DrunkenBird) {
+	      if (!this.invulnerable) {
+	        this.lives -= 1;
+	        this.invulnerable = true;
+	        this.color = "#FF9AD7";
 
-	      setTimeout(function () {
-	        this.color = "#8BDAFC";
-	        this.invulnerable = false;
-	      }.bind(this), 3000);
-	    }
+	        setTimeout(function () {
+	          this.color = "#8BDAFC";
+	          this.invulnerable = false;
+	        }.bind(this), 3000);
+	      }
 
-	    if (this.lives <= 0) {
-	      this.game.over = true;
+	      if (this.lives <= 0) {
+	        this.game.over = true;
+	      }
+	    } else if (object instanceof Power) {
+	      object.relocate();
+	      this.gunLevel += 1;
 	    }
 	  }
 	};
@@ -465,18 +553,41 @@
 
 	var Text = function (options) {
 	  this.color = options.color;
-	  this.font = options.font;
+	  this.font = options.font || 32 + "px Arial";
 	  this.pos = options.pos;
 	  this.text = options.text;
 	};
 
 	Text.prototype.draw = function (ctx) {
 	  ctx.fillStyle = this.color;
-	  ctx.font = 96 + "pt Helvetica Neue";
-	  ctx.fillText = (this.text, this.pos[0], this.pos[1]);
+	  ctx.font = this.font;
+	  ctx.fillText(this.text, this.pos[0], this.pos[1]);
 	};
 
+	Text.prototype.move = function () {};
+
 	module.exports = Text;
+
+/***/ },
+/* 10 */
+/***/ function(module, exports, __webpack_require__) {
+
+	var Util = __webpack_require__(4),
+	    MovingObject = __webpack_require__(5);
+
+	var Power = function (options) {
+	  this.pos = options.pos;
+	  this.vel = [0, 1];
+	  this.color = options.color || Power.COLOR;
+	  this.radius = options.radius || Power.RADIUS;
+	};
+
+	Power.COLOR = "#D280F0";
+	Power.RADIUS = 15;
+
+	Util.inherits(Power, MovingObject);
+
+	module.exports = Power;
 
 /***/ }
 /******/ ]);

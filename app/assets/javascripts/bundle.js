@@ -120,7 +120,7 @@
 	var Game = function () {
 	  this.DIM_X = 700;
 	  this.DIM_Y = 700;
-	  this.MAX_NUM_BIRDS = 4;
+	  this.MAX_NUM_BIRDS = 6;
 	  this.birds = this.addBirds();
 	  this.bullets = [];
 	  this.powers = [];
@@ -156,7 +156,7 @@
 	    birds.push(new DrunkenBird({
 	      pos: this.randomPosition(),
 	      game: this,
-	      vel: Util.randomVel(1, 5)
+	      vel: Util.randomVel(1, 5 + 0.1 * this.level)
 	    }));
 	  }
 
@@ -244,9 +244,24 @@
 	        this.bullets[i].collideWith(this.birds[j]);
 	        this.score += 100 * this.level;
 	        this.pointsUntilLevel -= 100 * this.level;
+
 	        if (this.pointsUntilLevel <= 0) {
 	          this.level += 1;
-	          this.pointsUntilLevel += this.score * this.level;
+	          this.pointsUntilLevel += this.score * 1.2;
+
+	          var intervalToken = setInterval(function () {
+	            this.birds = [];
+	            this.text = [new Text({
+	              color: "white",
+	              pos: [this.DIM_X / 2 - 50, this.DIM_Y / 2 + 16],
+	              text: "LEVEL " + this.level
+	            })];
+	          }.bind(this), 20);
+
+	          setTimeout(function () {
+	            clearInterval(intervalToken);
+	            this.text = [];
+	          }.bind(this), 3000);
 	        }
 
 	        if (Math.random() <= 0.05) {
@@ -391,9 +406,12 @@
 
 	Util.randomVel = function (min, max) {
 	  var velY = Math.random() * max;
-	  velY = velY < min ? min : velY;
+	  var velX = Math.random() * (max / 4);
 
-	  return [0, velY];
+	  velY = velY < min ? min : velY;
+	  velX = (velX < min ? min : velX) * (Math.random() <= 0.5 ? -1 : 1);
+
+	  return [velX, velY];
 	};
 
 	module.exports = Util;
@@ -519,10 +537,12 @@
 	        this.lives -= 1;
 	        this.invulnerable = true;
 	        this.color = "#FF9AD7";
+	        this.img.src = "images/redbird.png";
 
 	        setTimeout(function () {
 	          this.color = "#8BDAFC";
 	          this.invulnerable = false;
+	          this.img.src = "images/bird.png";
 	        }.bind(this), 3000);
 	      }
 
@@ -531,7 +551,9 @@
 	      }
 	    } else if (object instanceof Power) {
 	      object.relocate();
-	      this.gunLevel += 1;
+	      if (this.gunLevel < 20) {
+	        this.gunLevel += 1;
+	      }
 	    }
 	  }
 	};

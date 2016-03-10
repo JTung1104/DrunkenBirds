@@ -72,7 +72,9 @@
 	  this.lastTime = 0;
 
 	  setInterval(function () {
-	    this.game.birds = this.game.birds.concat(this.game.addBirds());
+	    if (!this.game.paused) {
+	      this.game.birds = this.game.birds.concat(this.game.addBirds());
+	    }
 	  }.bind(this), 5000);
 
 	  this.animationToken = requestAnimationFrame(this.animate.bind(this));
@@ -99,23 +101,37 @@
 /***/ function(module, exports, __webpack_require__) {
 
 	var DrunkenBird = __webpack_require__(3),
-	    Ship = __webpack_require__(6);
+	    Ship = __webpack_require__(6),
+	    Text = __webpack_require__(9);
 
 	var Game = function () {
 	  this.DIM_X = 700;
-	  this.DIM_Y = window.innerHeight - 100;
-	  this.MAX_NUM_BIRDS = 3;
-	  this.over = false;
-	  this.level = 1;
+	  this.DIM_Y = 700;
+	  this.MAX_NUM_BIRDS = 5;
 	  this.birds = this.addBirds();
 	  this.bullets = [];
+	  this.text = [];
 	  this.ship = new Ship({ game: this, pos: [this.DIM_X / 2, this.DIM_Y - 75] });
+	  this.level = 1;
+	  this.score = 0;
+	  this.over = false;
+	  this.paused = false;
+	};
+
+	var scoreEl = document.getElementById("score");
+	var livesEl = document.getElementById("lives");
+	var levelEl = document.getElementById("level");
+
+	Game.prototype.updateStats = function () {
+	  scoreEl.innerHTML = "Score: " + this.score;
+	  livesEl.innerHTML = "Lives: " + this.ship.lives;
+	  levelEl.innerHTML = "Level: " + this.level;
 	};
 
 	Game.prototype.addBirds = function () {
 	  var birds = [];
 
-	  for (var i = 0; i < this.MAX_NUM_BIRDS; i++) {
+	  for (var i = 0; i < this.MAX_NUM_BIRDS * this.level; i++) {
 	    birds.push(new DrunkenBird({
 	      pos: this.randomPosition(),
 	      game: this
@@ -127,7 +143,7 @@
 
 	Game.prototype.randomPosition = function () {
 	  var posX = Math.floor(Math.random() * this.DIM_X) - 50;
-	  if (posX < 0) {
+	  if (posX <= 0) {
 	    posX = 50;
 	  }
 	  return [posX, 0];
@@ -146,6 +162,15 @@
 	    object.move(timeDelta);
 	  });
 	};
+
+	Game.prototype.togglePause = function () {
+	  if (this.togglePause._lastPause + 300 < Date.now()) {
+	    this.paused = !this.paused;
+	    this.togglePause._lastPause = Date.now();
+	  }
+	};
+
+	Game.prototype.togglePause._lastPause = Date.now();
 
 	Game.prototype.removeObjects = function () {
 	  this.birds.forEach(function (bird, i) {
@@ -166,7 +191,7 @@
 	};
 
 	Game.prototype.allObjects = function () {
-	  return this.birds.concat([this.ship], this.bullets);
+	  return this.birds.concat([this.ship], this.bullets, this.text);
 	};
 
 	Game.prototype.checkCollisions = function () {
@@ -174,6 +199,9 @@
 	    for (var j = 0; j < this.birds.length; j++) {
 	      if (this.bullets[i].hasCollision(this.birds[j])) {
 	        this.bullets[i].collideWith(this.birds[j]);
+	        this.score += 100 * this.level;
+
+	        this.level = Math.floor(this.score / 5000) + 1;
 	      }
 	    }
 	  }
@@ -186,36 +214,32 @@
 	};
 
 	Game.prototype.step = function (timeDelta) {
-	  this.moveObjects(timeDelta);
-	  this.checkCollisions();
-	  this.removeObjects();
+	  if (!this.paused) {
+	    this.moveObjects(timeDelta);
+	    this.checkCollisions();
+	    this.updateStats();
+	    this.removeObjects();
+	  }
 	};
 
 	Game.prototype.handlePressedKeys = function () {
-	  if (window.isKeyPressed(37)) {
-	    if (this.ship.vel[0] > -this.ship.maxSpeed) {
-	      this.ship.vel[0] -= 0.5;
-	    }
+	  if (window.isKeyPressed(80)) {
+	    this.togglePause();
 	  }
-	  if (window.isKeyPressed(38)) {
-	    if (this.ship.vel[1] > -this.ship.maxSpeed) {
-	      this.ship.vel[1] -= 0.5;
-	    }
+	  if (window.isKeyPressed(37) && this.ship.vel[0] > -this.ship.maxSpeed) {
+	    this.ship.vel[0] -= 0.5;
 	  }
-	  if (window.isKeyPressed(39)) {
-	    if (this.ship.vel[0] < this.ship.maxSpeed) {
-	      this.ship.vel[0] += 0.5;
-	    }
+	  if (window.isKeyPressed(38) && this.ship.vel[1] > -this.ship.maxSpeed) {
+	    this.ship.vel[1] -= 0.5;
 	  }
-	  if (window.isKeyPressed(40)) {
-	    if (this.ship.vel[1] < this.ship.maxSpeed) {
-	      this.ship.vel[1] += 0.5;
-	    }
+	  if (window.isKeyPressed(39) && this.ship.vel[0] < this.ship.maxSpeed) {
+	    this.ship.vel[0] += 0.5;
+	  }
+	  if (window.isKeyPressed(40) && this.ship.vel[1] < this.ship.maxSpeed) {
+	    this.ship.vel[1] += 0.5;
 	  }
 	  if (window.isKeyPressed(32)) {
-	    if (this.bullets.length < 5) {
-	      this.ship.fireBullet(this);
-	    }
+	    this.ship.fireBullet(this);
 	  }
 	  if (!window.isKeyPressed(37) && !window.isKeyPressed(39)) {
 	    this.ship.vel[0] = 0;
@@ -239,7 +263,7 @@
 	  this.color = options.color || DrunkenBird.COLOR;
 	  this.radius = options.radius || DrunkenBird.RADIUS;
 	  this.game = options.game;
-	  this.vel = options.vel || Util.randomVel(0.5, 2);
+	  this.vel = options.vel || Util.randomVel(1, 3);
 	};
 
 	DrunkenBird.COLOR = "#125688";
@@ -331,23 +355,30 @@
 	  this.lives = 3;
 	  this.maxSpeed = 6;
 	  this.invulnerable = false;
+	  this.gunLevel = 1;
 	};
 
 	Ship.COLOR = "#8BDAFC";
-	Ship.RADIUS = 50;
+	Ship.RADIUS = 25;
 
 	Util.inherits(Ship, MovingObject);
 
 	Ship.prototype.fireBullet = function (game) {
-	  game.bullets.push(new Bullet({
-	    pos: [game.ship.pos[0], game.ship.pos[1] - 50],
-	    vel: [0, -8],
-	    game: game
-	  }));
+	  if (this.fireBullet._lastFire + 300 < Date.now()) {
+	    game.bullets.push(new Bullet({
+	      pos: [game.ship.pos[0], game.ship.pos[1] - 30],
+	      vel: [0, -8],
+	      game: game
+	    }));
+
+	    this.fireBullet._lastFire = Date.now();
+	  }
 	};
 
-	Ship.prototype.collideWith = function (bird) {
-	  if (this.hasCollision(bird)) {
+	Ship.prototype.fireBullet._lastFire = Date.now();
+
+	Ship.prototype.collideWith = function (object) {
+	  if (this.hasCollision(object)) {
 	    if (!this.invulnerable) {
 	      this.lives -= 1;
 	      this.invulnerable = true;
@@ -372,10 +403,10 @@
 	      newX = this.pos[0] + velX,
 	      newY = this.pos[1] + velY;
 
-	  if (newX < this.game.DIM_X - 50 && newX >= 50) {
+	  if (newX < this.game.DIM_X - this.radius && newX >= this.radius) {
 	    this.pos[0] = newX;
 	  }
-	  if (newY < this.game.DIM_Y - 50 && newY >= 50) {
+	  if (newY < this.game.DIM_Y - this.radius && newY >= this.radius) {
 	    this.pos[1] = newY;
 	  }
 	};
@@ -427,6 +458,25 @@
 	window.isKeyPressed = function (key) {
 	  return keys[key];
 	};
+
+/***/ },
+/* 9 */
+/***/ function(module, exports) {
+
+	var Text = function (options) {
+	  this.color = options.color;
+	  this.font = options.font;
+	  this.pos = options.pos;
+	  this.text = options.text;
+	};
+
+	Text.prototype.draw = function (ctx) {
+	  ctx.fillStyle = this.color;
+	  ctx.font = 96 + "pt Helvetica Neue";
+	  ctx.fillText = (this.text, this.pos[0], this.pos[1]);
+	};
+
+	module.exports = Text;
 
 /***/ }
 /******/ ]);

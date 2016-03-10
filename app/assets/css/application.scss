@@ -1,0 +1,37 @@
+ * {
+   padding: 0;
+   margin: 0;
+ }
+
+ body {
+   font-family: "HelveticaNeue-Light", "Helvetica Neue Light", "Helvetica Neue", Helvetica, Arial, "Lucida Grande", sans-serif;
+   font-weight: 300;
+   position: absolute;
+   top: 0;
+   bottom: 0;
+   left: 0;
+   right: 0;
+   display: flex;
+   justify-content: center;
+   align-content: center;
+   flex-wrap: wrap;
+   flex-direction: column;
+ }
+
+ canvas {
+   background: #222222;
+   display: block;
+   margin: auto;
+ }
+
+div {
+  display: block;
+}
+
+#score-container {
+  font-size: 20px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-direction: column;
+}

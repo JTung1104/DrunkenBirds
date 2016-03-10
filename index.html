@@ -3,9 +3,15 @@
   <head>
     <meta charset="utf-8">
     <title>Drunken Birds!</title>
-    <link rel="stylesheet" href="app/assets/css/application.css">
+    <link rel="stylesheet" href="app/assets/css/application.scss">
   </head>
   <body>
+    <div id="score-container">
+      <div id="level">Level: 1</div>
+      <div id="score">Score: 0</div>
+      <div id="lives">Lives: 3</div>
+    </div>
+    <div id="gameStatus"></div>
     <canvas id="myCanvas"></canvas>
     <script src="./app/assets/javascripts/bundle.js"></script>
   </body>

@@ -348,12 +348,14 @@
 	  this.srcY = 20;
 	  this.pos = options.pos;
 	  this.color = options.color || DrunkenBird.COLOR;
+	  this.strokeColor = options.strokeColor || DrunkenBird.STROKE_COLOR;
 	  this.radius = options.radius || DrunkenBird.RADIUS;
 	  this.game = options.game;
 	  this.vel = options.vel || Util.randomVel(1, 3);
 	};
 
 	DrunkenBird.COLOR = "#125688";
+	DrunkenBird.STROKE_COLOR = "#EDEEEE";
 	DrunkenBird.RADIUS = 30;
 
 	Util.inherits(DrunkenBird, MovingObject);
@@ -404,6 +406,7 @@
 	  this.vel = options.vel;
 	  this.radius = options.radius;
 	  this.color = options.color;
+	  this.strokeColor = options.strokeColor || options.color;
 	};
 
 	MovingObject.prototype.draw = function (ctx) {
@@ -411,6 +414,9 @@
 	  ctx.beginPath();
 	  ctx.arc(this.pos[0], this.pos[1], this.radius, 0, 2 * Math.PI);
 	  ctx.fill();
+	  ctx.strokeStyle = this.strokeColor;
+	  ctx.lineWidth = 2;
+	  ctx.stroke();
 	};
 
 	MovingObject.prototype.move = function (timeDelta) {

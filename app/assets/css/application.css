@@ -3,35 +3,91 @@
    margin: 0;
  }
 
- body {
-   font-family: "HelveticaNeue-Light", "Helvetica Neue Light", "Helvetica Neue", Helvetica, Arial, "Lucida Grande", sans-serif;
-   font-weight: 300;
-   position: absolute;
-   top: 0;
-   bottom: 0;
-   left: 0;
-   right: 0;
-   display: flex;
-   justify-content: center;
-   align-content: center;
-   flex-wrap: wrap;
-   flex-direction: column;
+body {
+  font-family: "HelveticaNeue-Light", "Helvetica Neue Light", "Helvetica Neue", Helvetica, Arial, "Lucida Grande", sans-serif;
+  font-weight: 300;
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  display: flex;
+  justify-content: center;
+  align-content: center;
+  flex-wrap: wrap;
+  flex-direction: column;
  }
+
+ul {
+  list-style: none;
+  background: #222222;
+}
+
+li {
+  margin-bottom: 5px;
+  margin-left: 10px;
+}
 
  canvas {
    background: #222222;
+   position: relative;
    display: block;
    margin: auto;
  }
 
-div {
-  display: block;
+#score-container {
+  font-size: 38px;
+  position: absolute;
+  display: flex;
+  justify-content: center;
+  flex-direction: column;
+  color: white;
+  background: #222222;
 }
 
-#score-container {
+#instructions {
+  display: flex;
+  align-items: center;
+  position: absolute;
+  z-index: 1;
+  top: 0px;
+  bottom: 0;
+  left: 0;
+  right: 0;
   font-size: 20px;
+  color: white;
+}
+
+#start {
   display: flex;
   justify-content: center;
   align-items: center;
-  flex-direction: column;
+  position: absolute;
+  top: 0px;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  font-size: 38px;
+  color: white;
+  background: #222222;
+}
+
+.visible {
+  visibility: visible;
+  opacity: 1;
+  transition: opacity 2s linear;
+}
+
+.hidden {
+  visibility: hidden;
+  opacity: 0;
+  transition: visibility 0s 2s, opacity 2s linear;
+}
+
+.bg {
+  background: url(http://res.cloudinary.com/dsolojfgkabc/image/upload/v1457667728/phone-backgrounds-5_wrbymz.jpg) no-repeat center center fixed;
+  -webkit-background-size: cover;
+  -moz-background-size: cover;
+  -o-background-size: cover;
+  background-size: cover;
 }

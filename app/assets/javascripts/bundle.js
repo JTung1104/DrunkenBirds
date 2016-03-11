@@ -46,7 +46,7 @@
 
 	var GameView = __webpack_require__(1),
 	    Game = __webpack_require__(2),
-	    KeyHandler = __webpack_require__(8);
+	    KeyHandler = __webpack_require__(10);
 
 	var el = document.getElementsByTagName("body")[0],
 	    canvas = document.getElementById("myCanvas"),
@@ -57,7 +57,6 @@
 
 	var token = setInterval(function () {
 	  if (isKeyPressed(83) && newGame) {
-	    console.log("I made it");
 	    scoreEl.className = "visible";
 	    startEl.className = "hidden";
 	    canvas.className = "visible";
@@ -75,11 +74,11 @@
 
 	var Game = __webpack_require__(2),
 	    Text = __webpack_require__(9),
-	    KeyHandler = __webpack_require__(8);
+	    KeyHandler = __webpack_require__(10);
 
 	var GameView = function (game, ctx) {
-	  this.game = game;
 	  game.gameView = this;
+	  this.game = game;
 	  this.ctx = ctx;
 	  this.lastTime = this.lastTime || 0;
 	};
@@ -108,7 +107,7 @@
 
 	  if (this.game.over) {
 	    this.game.text = [new Text({
-	      color: "#CF4B2A",
+	      color: "#7CE7FB",
 	      pos: [20, this.game.DIM_Y / 2 + 16],
 	      text: "Wow! Good Game! Press Enter To Play Again"
 	    })];
@@ -119,6 +118,7 @@
 	    this.game.tick++;
 	  }
 	};
+
 	module.exports = GameView;
 
 /***/ },
@@ -129,13 +129,12 @@
 	    Ship = __webpack_require__(6),
 	    Text = __webpack_require__(9),
 	    Util = __webpack_require__(4),
-	    Power = __webpack_require__(10);
+	    Power = __webpack_require__(8);
 
 	var Game = function () {
 	  this.DIM_X = 700;
 	  this.DIM_Y = 700;
 	  this.MAX_NUM_BIRDS = 6;
-	  this.birds = this.addBirds();
 	  this.bullets = [];
 	  this.powers = [];
 	  this.text = [];
@@ -146,6 +145,7 @@
 	  this.over = false;
 	  this.paused = false;
 	  this.tick = 0;
+	  this.birds = this.addBirds();
 	};
 
 	var scoreEl = document.getElementById("score");
@@ -163,15 +163,17 @@
 	Game.prototype.addBirds = function () {
 	  var birds = [];
 	  var max;
-	  var level = Math.random() <= 0.10 + 0.05 * this.level ? 2 : 1;
-	  max = this.level > 10 ? 10 : this.level;
+	  var birdLevel;
+	  max = this.level > 15 ? 15 : this.level;
 
 	  for (var i = 0; i < this.MAX_NUM_BIRDS * max; i++) {
+	    birdLevel = Math.random() <= 0.10 + 0.05 * this.level ? 2 : 1;
+
 	    birds.push(new DrunkenBird({
 	      pos: this.randomPosition(),
 	      game: this,
 	      vel: Util.randomVel(1, 5 + 0.1 * this.level),
-	      level: level
+	      level: birdLevel
 	    }));
 	  }
 
@@ -222,17 +224,17 @@
 
 	Game.prototype.removeObjects = function () {
 	  this.birds.forEach(function (bird, i) {
-	    if (bird.pos[0] < -50 || bird.pos[0] > this.DIM_X + 50) {
+	    if (bird.pos[0] <= -100 || bird.pos[0] > this.DIM_X + 100) {
 	      this.birds.splice(i, 1);
-	    } else if (bird.pos[1] > this.DIM_Y + 50) {
+	    } else if (bird.pos[1] >= this.DIM_Y + 100) {
 	      this.birds.splice(i, 1);
 	    }
 	  }.bind(this));
 
 	  this.bullets.forEach(function (bullet, i) {
-	    if (bullet.pos[0] < -3 || bullet.pos[0] > this.DIM_X + 3) {
+	    if (bullet.pos[0] < -5 || bullet.pos[0] > this.DIM_X + 5) {
 	      this.bullets.splice(i, 1);
-	    } else if (bullet.pos[1] > this.DIM_Y + 50 || bullet.pos[1] < -3) {
+	    } else if (bullet.pos[1] >= this.DIM_Y + 5 || bullet.pos[1] <= -5) {
 	      this.bullets.splice(i, 1);
 	    }
 	  }.bind(this));
@@ -253,54 +255,14 @@
 	Game.prototype.checkCollisions = function () {
 	  for (var i = 0; i < this.bullets.length; i++) {
 	    for (var j = 0; j < this.birds.length; j++) {
-	      if (this.bullets[i].hasCollision(this.birds[j])) {
-	        var pos = this.birds[j].pos;
-
-	        this.bullets[i].collideWith(this.birds[j]);
-	        this.score += 100 * this.level;
-	        this.pointsUntilLevel -= 100 * this.level;
-
-	        if (this.pointsUntilLevel <= 0) {
-	          this.level += 1;
-	          this.pointsUntilLevel += this.score * 1.2;
-
-	          var intervalToken = setInterval(function () {
-	            this.birds = [];
-
-	            if (!this.paused) {
-	              this.text = [new Text({
-	                color: "white",
-	                pos: [this.DIM_X / 2 - 50, this.DIM_Y / 2 + 16],
-	                text: "LEVEL " + this.level
-	              })];
-	            }
-	          }.bind(this), 20);
-
-	          setTimeout(function () {
-	            clearInterval(intervalToken);
-	            if (!this.paused) {
-	              this.text = [];
-	            }
-	          }.bind(this), 3000);
-	        }
-
-	        if (Math.random() <= 0.05 && this.birds[j].durability <= 0) {
-	          this.powers.push(new Power({ pos: pos, game: this }));
-	        }
-	      }
+	      this.bullets[i].collideWith(this.birds[j]);
 	    }
 	  }
-
 	  for (var k = 0; k < this.birds.length; k++) {
-	    if (this.ship.hasCollision(this.birds[k])) {
-	      this.ship.collideWith(this.birds[k]);
-	    }
+	    this.ship.collideWith(this.birds[k]);
 	  }
-
 	  for (var l = 0; l < this.powers.length; l++) {
-	    if (this.ship.hasCollision(this.powers[l])) {
-	      this.ship.collideWith(this.powers[l]);
-	    }
+	    this.ship.collideWith(this.powers[l]);
 	  }
 	};
 
@@ -317,7 +279,6 @@
 	  this.DIM_X = 700;
 	  this.DIM_Y = 700;
 	  this.MAX_NUM_BIRDS = 4;
-	  this.birds = this.addBirds();
 	  this.bullets = [];
 	  this.powers = [];
 	  this.text = [];
@@ -328,6 +289,7 @@
 	  this.over = false;
 	  this.paused = false;
 	  this.tick = 0;
+	  this.birds = this.addBirds();
 	};
 
 	Game.prototype.handlePressedKeys = function () {
@@ -385,27 +347,23 @@
 	  this.level = options.level || 1;
 	  this.durability = this.level;
 	  this.pos = options.pos;
-	  this.color = options.color || DrunkenBird.COLOR;
-	  this.strokeColor = options.strokeColor || DrunkenBird.STROKE_COLOR;
 	  this.radius = options.radius || DrunkenBird.RADIUS;
 	  this.game = options.game;
 	  this.vel = options.vel || Util.randomVel(1, 3);
 	};
 
-	DrunkenBird.COLOR = "#125688";
-	DrunkenBird.STROKE_COLOR = "#EDEEEE";
 	DrunkenBird.RADIUS = 48;
 
 	Util.inherits(DrunkenBird, MovingObject);
-
+	var frame;
 	DrunkenBird.prototype.draw = function (ctx) {
 	  if (this.level === 1) {
-	    var frame = Math.floor(this.game.tick / 10) % 3;
+	    frame = Math.floor(this.game.tick / 10) % 3;
 	    this.srcY = frame * 100;
 
 	    ctx.drawImage(this.img, this.srcX, this.srcY, 100, 100, this.pos[0] - 50, this.pos[1] - 50, 100, 100);
 	  } else if (this.level === 2) {
-	    var frame = Math.floor(this.game.tick / 10) % 5;
+	    frame = Math.floor(this.game.tick / 10) % 5;
 	    this.srcY = frame * 108;
 	    this.img.src = "images/bird_sheet2.png";
 
@@ -450,7 +408,6 @@
 	  this.vel = options.vel;
 	  this.radius = options.radius;
 	  this.color = options.color;
-	  this.strokeColor = options.strokeColor || options.color;
 	};
 
 	MovingObject.prototype.draw = function (ctx) {
@@ -458,9 +415,6 @@
 	  ctx.beginPath();
 	  ctx.arc(this.pos[0], this.pos[1], this.radius, 0, 2 * Math.PI);
 	  ctx.fill();
-	  ctx.strokeStyle = this.strokeColor;
-	  ctx.lineWidth = 2;
-	  ctx.stroke();
 	};
 
 	MovingObject.prototype.move = function (timeDelta) {
@@ -478,7 +432,7 @@
 	};
 
 	MovingObject.prototype.relocate = function () {
-	  this.pos = [-500, -500];
+	  this.pos = [-5000, 5000];
 	};
 
 	module.exports = MovingObject;
@@ -491,7 +445,7 @@
 	    Bullet = __webpack_require__(7),
 	    DrunkenBird = __webpack_require__(3),
 	    MovingObject = __webpack_require__(5),
-	    Power = __webpack_require__(10),
+	    Power = __webpack_require__(8),
 	    Game = __webpack_require__(2);
 
 	var Ship = function (options) {
@@ -587,15 +541,14 @@
 	        this.lives -= 1;
 	        this.invulnerable = true;
 	        this.img.src = "images/redbird.png";
+	        if (this.lives <= 0) {
+	          this.game.over = true;
+	        }
 
 	        setTimeout(function () {
 	          this.invulnerable = false;
 	          this.img.src = "images/bird.png";
 	        }.bind(this), 3000);
-	      }
-
-	      if (this.lives <= 0) {
-	        this.game.over = true;
 	      }
 	    } else if (object instanceof Power) {
 	      object.relocate();
@@ -635,6 +588,7 @@
 /***/ function(module, exports, __webpack_require__) {
 
 	var Util = __webpack_require__(4),
+	    Text = __webpack_require__(9),
 	    MovingObject = __webpack_require__(5);
 
 	var Bullet = function (options) {
@@ -654,9 +608,40 @@
 	  if (this.hasCollision(bird)) {
 	    this.relocate();
 	    bird.durability -= 1;
-
 	    if (bird.durability <= 0) {
 	      bird.relocate();
+	    }
+
+	    var pos = bird.pos;
+	    this.game.score += 100 * this.game.level;
+	    this.game.pointsUntilLevel -= 100 * this.game.level;
+
+	    if (this.game.pointsUntilLevel <= 0) {
+	      this.game.level += 1;
+	      this.game.pointsUntilLevel += this.game.score * 1.2;
+
+	      var intervalToken = setInterval(function () {
+	        this.game.birds = [];
+
+	        if (!this.game.paused) {
+	          this.game.text = [new Text({
+	            color: "white",
+	            pos: [this.game.DIM_X / 2 - 50, this.game.DIM_Y / 2 + 16],
+	            text: "LEVEL " + this.game.level
+	          })];
+	        }
+	      }.bind(this), 10);
+
+	      setTimeout(function () {
+	        clearInterval(intervalToken);
+	        if (!this.game.paused) {
+	          this.game.text = [];
+	        }
+	      }.bind(this), 3000);
+	    }
+
+	    if (Math.random() <= 0.05 && bird.durability <= 0) {
+	      this.game.powers.push(new Power({ pos: pos, game: this.game }));
 	    }
 	  }
 	};
@@ -665,21 +650,34 @@
 
 /***/ },
 /* 8 */
-/***/ function(module, exports) {
+/***/ function(module, exports, __webpack_require__) {
 
-	var keys = {};
+	var Util = __webpack_require__(4),
+	    MovingObject = __webpack_require__(5);
 
-	window.addEventListener("keydown", function (e) {
-	  keys[e.keyCode] = true;
-	});
-
-	window.addEventListener("keyup", function (e) {
-	  keys[e.keyCode] = false;
-	});
-
-	window.isKeyPressed = function (key) {
-	  return keys[key];
+	var Power = function (options) {
+	  this.img = new Image();
+	  this.img.src = "images/power1.png";
+	  this.srcX = 0;
+	  this.srcY = 0;
+	  this.pos = options.pos;
+	  this.game = options.game;
+	  this.vel = [0, 1];
+	  this.radius = options.radius || Power.RADIUS;
 	};
+
+	Power.RADIUS = 20;
+
+	Util.inherits(Power, MovingObject);
+
+	Power.prototype.draw = function (ctx) {
+	  var frame = Math.floor(this.game.tick / 10) % 4;
+	  this.img.src = "images/power" + (frame + 1) + ".png";
+
+	  ctx.drawImage(this.img, this.srcX, this.srcY, 30, 30, this.pos[0] - 20, this.pos[1] - 20, 40, 40);
+	};
+
+	module.exports = Power;
 
 /***/ },
 /* 9 */
@@ -704,36 +702,21 @@
 
 /***/ },
 /* 10 */
-/***/ function(module, exports, __webpack_require__) {
+/***/ function(module, exports) {
 
-	var Util = __webpack_require__(4),
-	    MovingObject = __webpack_require__(5);
+	var keys = {};
 
-	var Power = function (options) {
-	  this.img = new Image();
-	  this.img.src = "images/power1.png";
-	  this.srcX = 0;
-	  this.srcY = 0;
-	  this.pos = options.pos;
-	  this.game = options.game;
-	  this.vel = [0, 1];
-	  this.color = options.color || Power.COLOR;
-	  this.radius = options.radius || Power.RADIUS;
+	window.addEventListener("keydown", function (e) {
+	  keys[e.keyCode] = true;
+	});
+
+	window.addEventListener("keyup", function (e) {
+	  keys[e.keyCode] = false;
+	});
+
+	window.isKeyPressed = function (key) {
+	  return keys[key];
 	};
-
-	Power.COLOR = "#D280F0";
-	Power.RADIUS = 20;
-
-	Util.inherits(Power, MovingObject);
-
-	Power.prototype.draw = function (ctx) {
-	  var frame = Math.floor(this.game.tick / 10) % 4;
-	  this.img.src = "images/power" + (frame + 1) + ".png";
-
-	  ctx.drawImage(this.img, this.srcX, this.srcY, 30, 30, this.pos[0] - 20, this.pos[1] - 20, 40, 40);
-	};
-
-	module.exports = Power;
 
 /***/ }
 /******/ ]);

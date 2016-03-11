@@ -62,7 +62,9 @@
 	    canvas.className = "visible";
 	    canvas.height = new Game().DIM_Y;
 	    canvas.width = new Game().DIM_X;
-	    new GameView(new Game(), ctx).start();
+	    setTimeout(function () {
+	      new GameView(new Game(), ctx).start();
+	    }, 2000);
 	    newGame = false;
 	    clearInterval(token);
 	  }
@@ -166,15 +168,17 @@
 	  var birdLevel;
 	  max = this.level > 15 ? 15 : this.level;
 
-	  for (var i = 0; i < this.MAX_NUM_BIRDS * max; i++) {
-	    birdLevel = Math.random() <= 0.10 + 0.05 * this.level ? 2 : 1;
+	  if (this.text.length === 0) {
+	    for (var i = 0; i < this.MAX_NUM_BIRDS * max; i++) {
+	      birdLevel = Math.random() <= 0.10 + 0.05 * this.level ? 2 : 1;
 
-	    birds.push(new DrunkenBird({
-	      pos: this.randomPosition(),
-	      game: this,
-	      vel: Util.randomVel(1, 5 + 0.1 * this.level),
-	      level: birdLevel
-	    }));
+	      birds.push(new DrunkenBird({
+	        pos: this.randomPosition(),
+	        game: this,
+	        vel: Util.randomVel(1, 5 + 0.1 * this.level),
+	        level: birdLevel
+	      }));
+	    }
 	  }
 
 	  return birds;
@@ -589,6 +593,7 @@
 
 	var Util = __webpack_require__(4),
 	    Text = __webpack_require__(9),
+	    Power = __webpack_require__(8),
 	    MovingObject = __webpack_require__(5);
 
 	var Bullet = function (options) {
@@ -606,13 +611,21 @@
 
 	Bullet.prototype.collideWith = function (bird) {
 	  if (this.hasCollision(bird)) {
+	    var pos = bird.pos;
 	    this.relocate();
 	    bird.durability -= 1;
+
 	    if (bird.durability <= 0) {
 	      bird.relocate();
+
+	      if (Math.random() <= 0.05) {
+	        this.game.powers.push(new Power({
+	          pos: pos,
+	          game: this.game
+	        }));
+	      }
 	    }
 
-	    var pos = bird.pos;
 	    this.game.score += 100 * this.game.level;
 	    this.game.pointsUntilLevel -= 100 * this.game.level;
 
@@ -620,28 +633,19 @@
 	      this.game.level += 1;
 	      this.game.pointsUntilLevel += this.game.score * 1.2;
 
-	      var intervalToken = setInterval(function () {
-	        this.game.birds = [];
+	      if (!this.game.paused) {
+	        this.game.text = [new Text({
+	          color: "white",
+	          pos: [this.game.DIM_X / 2 - 50, this.game.DIM_Y / 2 + 16],
+	          text: "LEVEL " + this.game.level
+	        })];
 
-	        if (!this.game.paused) {
-	          this.game.text = [new Text({
-	            color: "white",
-	            pos: [this.game.DIM_X / 2 - 50, this.game.DIM_Y / 2 + 16],
-	            text: "LEVEL " + this.game.level
-	          })];
-	        }
-	      }.bind(this), 10);
-
-	      setTimeout(function () {
-	        clearInterval(intervalToken);
-	        if (!this.game.paused) {
-	          this.game.text = [];
-	        }
-	      }.bind(this), 3000);
-	    }
-
-	    if (Math.random() <= 0.05 && bird.durability <= 0) {
-	      this.game.powers.push(new Power({ pos: pos, game: this.game }));
+	        setTimeout(function () {
+	          if (!this.game.paused) {
+	            this.game.text = [];
+	          }
+	        }.bind(this), 3000);
+	      }
 	    }
 	  }
 	};

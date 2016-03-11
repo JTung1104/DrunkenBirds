@@ -5,24 +5,28 @@
     <title>Drunken Birds!</title>
     <link rel="stylesheet" href="app/assets/css/application.css">
   </head>
-  <body>
-    <div id="score-container">
+  <body class="bg">
+    <div class="hidden" id="score-container">
       <div id="level">Level: 1</div>
       <div id="score">Score: 0</div>
       <div id="lives">Lives: 3</div>
       <div id="gunLevel">Gun Level: 1</div>
     </div>
 
-    <div id="instructions">
-      <ul>
+    <div class="visible" id="instructions">
+      <ul id="instructions-list">
         <li>Move using the arrow keys</li>
-        <li>Shoot - 'spacebar'</li>
-        <li>Pause - 'p'</li>
-        <li>Blast the circles to find power-ups</li>
+        <li>'spacebar' - Shoot</li>
+        <li>'p' - Pause</li>
+        <li>Blast the birds to find power-ups</li>
         <li>Grab the power-ups to level up your gun!</li>
       </ul>
     </div>
-    <canvas id="myCanvas"></canvas>
+
+    <div class="visible" id="start">Press S to start</div>
+
+    <canvas class="hidden" id="myCanvas"></canvas>
+
     <script src="./app/assets/javascripts/bundle.js"></script>
   </body>
 </html>

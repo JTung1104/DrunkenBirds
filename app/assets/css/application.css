@@ -13,7 +13,7 @@ body {
   right: 0;
   display: flex;
   justify-content: center;
-  align-content: center;
+  align-content: space-between;
   flex-wrap: wrap;
   flex-direction: column;
  }
@@ -31,14 +31,16 @@ li {
  canvas {
    background: #222222;
    position: relative;
-   display: block;
+   right: 20%;
    margin: auto;
  }
 
 #score-container {
   font-size: 38px;
-  position: absolute;
+  position: relative;
   display: flex;
+  margin-bottom: auto;
+  margin-right: auto;
   justify-content: center;
   flex-direction: column;
   color: white;
@@ -48,7 +50,7 @@ li {
 #instructions {
   display: flex;
   align-items: center;
-  position: absolute;
+  position: relative;
   z-index: 1;
   top: 0px;
   bottom: 0;
@@ -56,6 +58,7 @@ li {
   right: 0;
   font-size: 20px;
   color: white;
+  margin-right: auto;
 }
 
 #start {

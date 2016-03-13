@@ -53,7 +53,6 @@
 	    ctx = canvas.getContext("2d"),
 	    scoreEl = document.getElementById("score-container"),
 	    startEl = document.getElementById("start"),
-	    musicButton = document.getElementById("music"),
 	    newGame = true;
 
 	var token = setInterval(function () {
@@ -70,8 +69,6 @@
 	    clearInterval(token);
 	  }
 	}, 30);
-
-	musicButton.onClick = function () {};
 
 /***/ },
 /* 1 */

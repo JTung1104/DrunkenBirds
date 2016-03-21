@@ -8,17 +8,15 @@ DrunkenBirds is a 2D browser based shooter featuring smooth omnidirectional move
 ## How to play
 
 ###Controls
-
-Use the arrow keys to move around.
-Hold Spacebar to shoot.
-Press 'p' to pause.
+- Use the arrow keys to move around.
+- Hold Spacebar to shoot.
+- Press 'p' to pause.
 
 ###Tips
 - Get the power-ups that the birds drop to level up your gun.
 - Each power-up reduces delay between shots.
 - At Gun level 3 your gun shoots 3 bullets instead of one.
 - At Gun Level 20, your bullets increase in size and get a significant speed boost.
-
 - The red birds have one hitpoint. They require only one hit to kill.
 - The white birds have two hitpoints. They require two hits to kill.
 

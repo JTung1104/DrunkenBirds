@@ -114,7 +114,7 @@
 	  if (this.game.over) {
 	    this.game.text = [new Text({
 	      color: "#7CE7FB",
-	      pos: [20, this.game.DIM_Y / 2 + 16],
+	      pos: [160, this.game.DIM_Y / 2 + 16],
 	      text: "Press Enter To Play Again"
 	    })];
 
@@ -135,6 +135,7 @@
 	    Ship = __webpack_require__(6),
 	    Text = __webpack_require__(8),
 	    Util = __webpack_require__(4),
+	    Background = __webpack_require__(11),
 	    Power = __webpack_require__(9);
 
 	var Game = function () {
@@ -143,6 +144,7 @@
 	  self.DIM_X = 700;
 	  self.DIM_Y = 700;
 	  self.MAX_NUM_BIRDS = 6;
+	  self.background = new Background();
 	  self.bullets = [];
 	  self.powers = [];
 	  self.text = [];
@@ -154,6 +156,8 @@
 	  self.paused = false;
 	  self.tick = 0;
 	  self.birds = this.addBirds();
+
+	  return self;
 	};
 
 	var scoreEl = document.getElementById("score");
@@ -172,6 +176,7 @@
 	  var birds = [];
 	  var max;
 	  var birdLevel;
+
 	  max = this.level > 15 ? 15 : this.level;
 
 	  if (this.text.length === 0) {
@@ -259,7 +264,7 @@
 	};
 
 	Game.prototype.allObjects = function () {
-	  return this.birds.concat([this.ship], this.bullets, this.text, this.powers);
+	  return this.birds.concat([this.background], [this.ship], this.bullets, this.text, this.powers);
 	};
 
 	Game.prototype.checkCollisions = function () {
@@ -363,12 +368,15 @@
 	  self.radius = options.radius || DrunkenBird.RADIUS;
 	  self.game = options.game;
 	  self.vel = options.vel || Util.randomVel(1, 3);
+
+	  return self;
 	};
 
 	DrunkenBird.RADIUS = 48;
 
 	Util.inherits(DrunkenBird, MovingObject);
 	var frame;
+
 	DrunkenBird.prototype.draw = function (ctx) {
 	  if (this.level === 1) {
 	    frame = Math.floor(this.game.tick / 10) % 3;
@@ -750,6 +758,41 @@
 	window.isKeyPressed = function (key) {
 	  return keys[key];
 	};
+
+/***/ },
+/* 11 */
+/***/ function(module, exports, __webpack_require__) {
+
+	var Util = __webpack_require__(4),
+	    MovingObject = __webpack_require__(5);
+
+	var Background = function (options) {
+	  var self = this instanceof Background ? this : Object.create(DrunkenBird.prototype);
+
+	  self.img = new Image();
+	  self.img.src = "images/sky.png";
+	  self.speed = 1;
+	  self.DIM_Y = options.DIM_Y;
+	  self.DIM_X = options.DIM_X;
+	  self.x = 0;
+	  self.y = 0;
+
+	  return self;
+	};
+
+	Util.inherits(Background, MovingObject);
+
+	Background.prototype.draw = function (ctx) {
+	  // Pan background
+	  this.y += this.speed;
+	  ctx.drawImage(this.img, this.x, this.y);
+	  // Draw another image at the top edge of the first image
+	  ctx.drawImage(this.img, this.x, this.y - this.DIM_Y);
+	  // If the image scrolled off the screen, reset
+	  if (this.y >= this.DIM_Y) this.y = 0;
+	};
+
+	module.exports = Background;
 
 /***/ }
 /******/ ]);

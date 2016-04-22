@@ -113,7 +113,7 @@
 
 	  if (this.game.over) {
 	    this.game.text = [new Text({
-	      color: "#7CE7FB",
+	      color: "#000",
 	      pos: [160, this.game.DIM_Y / 2 + 16],
 	      text: "Press Enter To Play Again"
 	    })];
@@ -144,7 +144,7 @@
 	  self.DIM_X = 700;
 	  self.DIM_Y = 700;
 	  self.MAX_NUM_BIRDS = 6;
-	  self.background = new Background();
+	  self.background = new Background({ DIM_X: self.DIM_X, DIM_Y: self.DIM_Y });
 	  self.bullets = [];
 	  self.powers = [];
 	  self.text = [];
@@ -264,7 +264,7 @@
 	};
 
 	Game.prototype.allObjects = function () {
-	  return this.birds.concat([this.background], [this.ship], this.bullets, this.text, this.powers);
+	  return [this.background].concat(this.birds, [this.ship], this.bullets, this.text, this.powers);
 	};
 
 	Game.prototype.checkCollisions = function () {
@@ -679,6 +679,17 @@
 	  }
 	};
 
+	Bullet.prototype.draw = function (ctx) {
+	  ctx.fillStyle = this.color;
+	  ctx.beginPath();
+	  ctx.arc(this.pos[0], this.pos[1], this.radius, 0, 2 * Math.PI);
+	  ctx.fill();
+
+	  ctx.strokeStyle = "#000";
+	  ctx.lineWidth = 1;
+	  ctx.stroke();
+	};
+
 	module.exports = Bullet;
 
 /***/ },
@@ -770,7 +781,7 @@
 	  var self = this instanceof Background ? this : Object.create(DrunkenBird.prototype);
 
 	  self.img = new Image();
-	  self.img.src = "images/sky.png";
+	  self.img.src = "images/sky.jpg";
 	  self.speed = 1;
 	  self.DIM_Y = options.DIM_Y;
 	  self.DIM_X = options.DIM_X;
@@ -783,13 +794,17 @@
 	Util.inherits(Background, MovingObject);
 
 	Background.prototype.draw = function (ctx) {
-	  // Pan background
+	  ctx.drawImage(this.img, 50, 0, 900, 640, this.x, this.y, 700, 700);
+
+	  ctx.drawImage(this.img, 50, 0, 900, 640, this.x, this.y - this.DIM_Y, 700, 700);
+
+	  if (this.y >= this.DIM_Y) {
+	    this.y = 0;
+	  }
+	};
+
+	Background.prototype.move = function () {
 	  this.y += this.speed;
-	  ctx.drawImage(this.img, this.x, this.y);
-	  // Draw another image at the top edge of the first image
-	  ctx.drawImage(this.img, this.x, this.y - this.DIM_Y);
-	  // If the image scrolled off the screen, reset
-	  if (this.y >= this.DIM_Y) this.y = 0;
 	};
 
 	module.exports = Background;

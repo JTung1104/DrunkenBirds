@@ -79,7 +79,7 @@
 	    KeyHandler = __webpack_require__(10);
 
 	var GameView = function (game, ctx) {
-	  var self = this instanceof Power ? this : Object.create(GameView.prototype);
+	  var self = this instanceof GameView ? this : Object.create(GameView.prototype);
 
 	  game.gameView = self;
 	  self.game = game;
@@ -138,7 +138,7 @@
 	    Power = __webpack_require__(9);
 
 	var Game = function () {
-	  var self = this instanceof Power ? this : Object.create(Game.prototype);
+	  var self = this instanceof Game ? this : Object.create(Game.prototype);
 
 	  self.DIM_X = 700;
 	  self.DIM_Y = 700;
@@ -351,7 +351,7 @@
 	    MovingObject = __webpack_require__(5);
 
 	var DrunkenBird = function (options) {
-	  var self = this instanceof Power ? this : Object.create(DrunkenBird.prototype);
+	  var self = this instanceof DrunkenBird ? this : Object.create(DrunkenBird.prototype);
 
 	  self.img = new Image();
 	  self.img.src = "images/bird_sheet.png";
@@ -466,7 +466,7 @@
 	    Game = __webpack_require__(2);
 
 	var Ship = function (options) {
-	  var self = this instanceof Power ? this : Object.create(Ship.prototype);
+	  var self = this instanceof Ship ? this : Object.create(Ship.prototype);
 
 	  self.img = new Image();
 	  self.tick = 0;
@@ -614,7 +614,7 @@
 	    MovingObject = __webpack_require__(5);
 
 	var Bullet = function (options) {
-	  var self = this instanceof Power ? this : Object.create(Bullet.prototype);
+	  var self = this instanceof Bullet ? this : Object.create(Bullet.prototype);
 
 	  self.pos = options.pos;
 	  self.vel = options.vel;
@@ -678,7 +678,7 @@
 /***/ function(module, exports) {
 
 	var Text = function (options) {
-	  var self = this instanceof Power ? this : Object.create(Text.prototype);
+	  var self = this instanceof Text ? this : Object.create(Text.prototype);
 
 	  self.color = options.color;
 	  self.font = options.font || 32 + "px Arial";

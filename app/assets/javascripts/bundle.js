@@ -75,14 +75,18 @@
 /***/ function(module, exports, __webpack_require__) {
 
 	var Game = __webpack_require__(2),
-	    Text = __webpack_require__(9),
+	    Text = __webpack_require__(8),
 	    KeyHandler = __webpack_require__(10);
 
 	var GameView = function (game, ctx) {
-	  game.gameView = this;
-	  this.game = game;
-	  this.ctx = ctx;
-	  this.lastTime = this.lastTime || 0;
+	  var self = this instanceof Power ? this : Object.create(GameView.prototype);
+
+	  game.gameView = self;
+	  self.game = game;
+	  self.ctx = ctx;
+	  self.lastTime = self.lastTime || 0;
+
+	  return self;
 	};
 
 	GameView.prototype.start = function () {
@@ -111,7 +115,7 @@
 	    this.game.text = [new Text({
 	      color: "#7CE7FB",
 	      pos: [20, this.game.DIM_Y / 2 + 16],
-	      text: "Wow! Good Game! Press Enter To Play Again"
+	      text: "Press Enter To Play Again"
 	    })];
 
 	    this.game.paused = true;
@@ -129,25 +133,27 @@
 
 	var DrunkenBird = __webpack_require__(3),
 	    Ship = __webpack_require__(6),
-	    Text = __webpack_require__(9),
+	    Text = __webpack_require__(8),
 	    Util = __webpack_require__(4),
-	    Power = __webpack_require__(8);
+	    Power = __webpack_require__(9);
 
 	var Game = function () {
-	  this.DIM_X = 700;
-	  this.DIM_Y = 700;
-	  this.MAX_NUM_BIRDS = 6;
-	  this.bullets = [];
-	  this.powers = [];
-	  this.text = [];
-	  this.ship = new Ship({ game: this, pos: [this.DIM_X / 2, this.DIM_Y - 75] });
-	  this.level = 1;
-	  this.score = 0;
-	  this.pointsUntilLevel = 5000;
-	  this.over = false;
-	  this.paused = false;
-	  this.tick = 0;
-	  this.birds = this.addBirds();
+	  var self = this instanceof Power ? this : Object.create(Game.prototype);
+
+	  self.DIM_X = 700;
+	  self.DIM_Y = 700;
+	  self.MAX_NUM_BIRDS = 6;
+	  self.bullets = [];
+	  self.powers = [];
+	  self.text = [];
+	  self.ship = new Ship({ game: self, pos: [self.DIM_X / 2, self.DIM_Y - 75] });
+	  self.level = 1;
+	  self.score = 0;
+	  self.pointsUntilLevel = 5000;
+	  self.over = false;
+	  self.paused = false;
+	  self.tick = 0;
+	  self.birds = this.addBirds();
 	};
 
 	var scoreEl = document.getElementById("score");
@@ -299,6 +305,7 @@
 	Game.prototype.handlePressedKeys = function () {
 	  if (!this.over) {
 	    if (window.isKeyPressed(80)) {
+	      // 'p'
 	      this.togglePause();
 	    }
 	  }
@@ -344,16 +351,18 @@
 	    MovingObject = __webpack_require__(5);
 
 	var DrunkenBird = function (options) {
-	  this.img = new Image();
-	  this.img.src = "images/bird_sheet.png";
-	  this.srcX = 0;
-	  this.srcY = 0;
-	  this.level = options.level || 1;
-	  this.durability = this.level;
-	  this.pos = options.pos;
-	  this.radius = options.radius || DrunkenBird.RADIUS;
-	  this.game = options.game;
-	  this.vel = options.vel || Util.randomVel(1, 3);
+	  var self = this instanceof Power ? this : Object.create(DrunkenBird.prototype);
+
+	  self.img = new Image();
+	  self.img.src = "images/bird_sheet.png";
+	  self.srcX = 0;
+	  self.srcY = 0;
+	  self.level = options.level || 1;
+	  self.durability = self.level;
+	  self.pos = options.pos;
+	  self.radius = options.radius || DrunkenBird.RADIUS;
+	  self.game = options.game;
+	  self.vel = options.vel || Util.randomVel(1, 3);
 	};
 
 	DrunkenBird.RADIUS = 48;
@@ -408,10 +417,14 @@
 /***/ function(module, exports) {
 
 	var MovingObject = function (options) {
-	  this.pos = options.pos;
-	  this.vel = options.vel;
-	  this.radius = options.radius;
-	  this.color = options.color;
+	  var self = this instanceof MovingObject ? this : Object.create(MovingObject.prototype);
+
+	  self.pos = options.pos;
+	  self.vel = options.vel;
+	  self.radius = options.radius;
+	  self.color = options.color;
+
+	  return self;
 	};
 
 	MovingObject.prototype.draw = function (ctx) {
@@ -449,24 +462,28 @@
 	    Bullet = __webpack_require__(7),
 	    DrunkenBird = __webpack_require__(3),
 	    MovingObject = __webpack_require__(5),
-	    Power = __webpack_require__(8),
+	    Power = __webpack_require__(9),
 	    Game = __webpack_require__(2);
 
 	var Ship = function (options) {
-	  this.img = new Image();
-	  this.tick = 0;
-	  this.img.src = "images/bird.png";
-	  this.srcX;
-	  this.srcY = 3;
-	  this.pos = options.pos;
-	  this.vel = [0, 0];
-	  this.color = options.color || Ship.COLOR;
-	  this.radius = options.radius || Ship.RADIUS;
-	  this.game = options.game;
-	  this.lives = 3;
-	  this.maxSpeed = 6;
-	  this.invulnerable = false;
-	  this.gunLevel = 1;
+	  var self = this instanceof Power ? this : Object.create(Ship.prototype);
+
+	  self.img = new Image();
+	  self.tick = 0;
+	  self.img.src = "images/bird.png";
+	  self.srcX;
+	  self.srcY = 3;
+	  self.pos = options.pos;
+	  self.vel = [0, 0];
+	  self.color = options.color || Ship.COLOR;
+	  self.radius = options.radius || Ship.RADIUS;
+	  self.game = options.game;
+	  self.lives = 3;
+	  self.maxSpeed = 6;
+	  self.invulnerable = false;
+	  self.gunLevel = 1;
+
+	  return self;
 	};
 
 	Ship.COLOR = "#8BDAFC";
@@ -592,16 +609,20 @@
 /***/ function(module, exports, __webpack_require__) {
 
 	var Util = __webpack_require__(4),
-	    Text = __webpack_require__(9),
-	    Power = __webpack_require__(8),
+	    Text = __webpack_require__(8),
+	    Power = __webpack_require__(9),
 	    MovingObject = __webpack_require__(5);
 
 	var Bullet = function (options) {
-	  this.pos = options.pos;
-	  this.vel = options.vel;
-	  this.color = options.color || Bullet.COLOR;
-	  this.radius = options.radius || Bullet.RADIUS;
-	  this.game = options.game;
+	  var self = this instanceof Power ? this : Object.create(Bullet.prototype);
+
+	  self.pos = options.pos;
+	  self.vel = options.vel;
+	  self.color = options.color || Bullet.COLOR;
+	  self.radius = options.radius || Bullet.RADIUS;
+	  self.game = options.game;
+
+	  return self;
 	};
 
 	Bullet.COLOR = "#A5FCF2";
@@ -654,20 +675,49 @@
 
 /***/ },
 /* 8 */
+/***/ function(module, exports) {
+
+	var Text = function (options) {
+	  var self = this instanceof Power ? this : Object.create(Text.prototype);
+
+	  self.color = options.color;
+	  self.font = options.font || 32 + "px Arial";
+	  self.pos = options.pos;
+	  self.text = options.text;
+
+	  return self;
+	};
+
+	Text.prototype.draw = function (ctx) {
+	  ctx.fillStyle = this.color;
+	  ctx.font = this.font;
+	  ctx.fillText(this.text, this.pos[0], this.pos[1]);
+	};
+
+	Text.prototype.move = function () {};
+
+	module.exports = Text;
+
+/***/ },
+/* 9 */
 /***/ function(module, exports, __webpack_require__) {
 
 	var Util = __webpack_require__(4),
 	    MovingObject = __webpack_require__(5);
 
 	var Power = function (options) {
-	  this.img = new Image();
-	  this.img.src = "images/power1.png";
-	  this.srcX = 0;
-	  this.srcY = 0;
-	  this.pos = options.pos;
-	  this.game = options.game;
-	  this.vel = [0, 1];
-	  this.radius = options.radius || Power.RADIUS;
+	  var self = this instanceof Power ? this : Object.create(Power.prototype);
+
+	  self.img = new Image();
+	  self.img.src = "images/power1.png";
+	  self.srcX = 0;
+	  self.srcY = 0;
+	  self.pos = options.pos;
+	  self.game = options.game;
+	  self.vel = [0, 1];
+	  self.radius = options.radius || Power.RADIUS;
+
+	  return self;
 	};
 
 	Power.RADIUS = 20;
@@ -682,27 +732,6 @@
 	};
 
 	module.exports = Power;
-
-/***/ },
-/* 9 */
-/***/ function(module, exports) {
-
-	var Text = function (options) {
-	  this.color = options.color;
-	  this.font = options.font || 32 + "px Arial";
-	  this.pos = options.pos;
-	  this.text = options.text;
-	};
-
-	Text.prototype.draw = function (ctx) {
-	  ctx.fillStyle = this.color;
-	  ctx.font = this.font;
-	  ctx.fillText(this.text, this.pos[0], this.pos[1]);
-	};
-
-	Text.prototype.move = function () {};
-
-	module.exports = Text;
 
 /***/ },
 /* 10 */

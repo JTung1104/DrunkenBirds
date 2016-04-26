@@ -46,7 +46,7 @@
 
 	var GameView = __webpack_require__(1),
 	    Game = __webpack_require__(2),
-	    KeyHandler = __webpack_require__(10);
+	    KeyHandler = __webpack_require__(4);
 
 	var el = document.getElementsByTagName("body")[0],
 	    canvas = document.getElementById("myCanvas"),
@@ -75,8 +75,8 @@
 /***/ function(module, exports, __webpack_require__) {
 
 	var Game = __webpack_require__(2),
-	    Text = __webpack_require__(8),
-	    KeyHandler = __webpack_require__(10);
+	    Text = __webpack_require__(3),
+	    KeyHandler = __webpack_require__(4);
 
 	var GameView = function (game, ctx) {
 	  var self = this instanceof GameView ? this : Object.create(GameView.prototype);
@@ -131,12 +131,13 @@
 /* 2 */
 /***/ function(module, exports, __webpack_require__) {
 
-	var DrunkenBird = __webpack_require__(3),
-	    Ship = __webpack_require__(6),
-	    Text = __webpack_require__(8),
-	    Util = __webpack_require__(4),
+	var DrunkenBird = __webpack_require__(5),
+	    Ship = __webpack_require__(8),
+	    Text = __webpack_require__(3),
+	    Util = __webpack_require__(6),
 	    Background = __webpack_require__(11),
-	    Power = __webpack_require__(9);
+	    Bullet = __webpack_require__(9),
+	    Power = __webpack_require__(10);
 
 	var Game = function () {
 	  var self = this instanceof Game ? this : Object.create(Game.prototype);
@@ -238,27 +239,50 @@
 	Game.prototype.togglePause._lastPause = Date.now();
 
 	Game.prototype.removeObjects = function () {
-	  this.birds.forEach(function (bird, i) {
-	    if (bird.pos[0] <= -100 || bird.pos[0] > this.DIM_X + 100) {
-	      this.birds.splice(i, 1);
-	    } else if (bird.pos[1] >= this.DIM_Y + 100) {
-	      this.birds.splice(i, 1);
-	    }
-	  }.bind(this));
+	  // this.birds.forEach(function (bird, i) {
+	  //   if (bird.pos[0] <= -100 || bird.pos[0] > (this.DIM_X + 100)) {
+	  //     this.birds.splice(i, 1);
+	  //   }
+	  //   else if (bird.pos[1] >= (this.DIM_Y + 100)) {
+	  //     this.birds.splice(i, 1);
+	  //   }
+	  // }.bind(this));
+	  //
+	  // this.bullets.forEach(function (bullet, i) {
+	  //   if (bullet.pos[0] < -5 || bullet.pos[0] > (this.DIM_X + 5)) {
+	  //     this.bullets.splice(i, 1);
+	  //   }
+	  //   else if (bullet.pos[1] >= (this.DIM_Y + 5) || bullet.pos[1] <= -5) {
+	  //     this.bullets.splice(i, 1);
+	  //   }
+	  // }.bind(this));
+	  //
+	  // this.powers.forEach(function (power, i) {
+	  //   if (power.pos[0] < -15 || power.pos[0] > (this.DIM_X + 15)) {
+	  //     this.powers.splice(i, 1);
+	  //   } else if (power.pos[1] > (this.DIM_Y + 15) || power.pos[1] < -15) {
+	  //     this.powers.splice(i, 1);
+	  //   }
+	  // }.bind(this));
+	  var j;
+	  var length = this.allObjects().length;
 
-	  this.bullets.forEach(function (bullet, i) {
-	    if (bullet.pos[0] < -5 || bullet.pos[0] > this.DIM_X + 5) {
-	      this.bullets.splice(i, 1);
-	    } else if (bullet.pos[1] >= this.DIM_Y + 5 || bullet.pos[1] <= -5) {
-	      this.bullets.splice(i, 1);
-	    }
-	  }.bind(this));
+	  this.allObjects().forEach(function (object, i) {
+	    j = i;
 
-	  this.powers.forEach(function (power, i) {
-	    if (power.pos[0] < -15 || power.pos[0] > this.DIM_X + 15) {
-	      this.powers.splice(i, 1);
-	    } else if (power.pos[1] > this.DIM_Y + 15 || power.pos[1] < -15) {
-	      this.powers.splice(i, 1);
+	    if (!(object instanceof Background)) {
+	      if (this.outOfBounds(object)) {
+	        if (object instanceof Power) {
+	          j -= length - this.powers.length;
+	          this.powers.splice(j, 1);
+	        } else if (object instanceof DrunkenBird) {
+	          j -= length - this.birds.length;
+	          this.birds.splice(j, 1);
+	        } else if (object instanceof Bullet) {
+	          j -= length - this.bullets.length;
+	          this.bullets.splice(j, 1);
+	        }
+	      }
 	    }
 	  }.bind(this));
 	};
@@ -267,24 +291,28 @@
 	  return [this.background].concat(this.birds, [this.ship], this.bullets, this.text, this.powers);
 	};
 
-	Game.prototype.checkCollisions = function () {
+	Game.prototype.outOfBounds = function (object) {
+	  return object.pos[0] < -object.radius || object.pos[0] > this.DIM_X + object.radius || object.pos[1] > this.DIM_Y + object.radius || object.pos[1] < -object.radius;
+	};
+
+	Game.prototype.handleCollisions = function () {
 	  for (var i = 0; i < this.bullets.length; i++) {
 	    for (var j = 0; j < this.birds.length; j++) {
-	      this.bullets[i].collideWith(this.birds[j]);
+	      this.bullets[i].handleCollision(this.birds[j]);
 	    }
 	  }
 	  for (var k = 0; k < this.birds.length; k++) {
-	    this.ship.collideWith(this.birds[k]);
+	    this.ship.handleCollision(this.birds[k]);
 	  }
 	  for (var l = 0; l < this.powers.length; l++) {
-	    this.ship.collideWith(this.powers[l]);
+	    this.ship.handleCollision(this.powers[l]);
 	  }
 	};
 
 	Game.prototype.step = function (timeDelta) {
 	  if (!this.paused) {
 	    this.moveObjects(timeDelta);
-	    this.checkCollisions();
+	    this.handleCollisions();
 	    this.updateStats();
 	    this.removeObjects();
 	  }
@@ -350,10 +378,53 @@
 
 /***/ },
 /* 3 */
+/***/ function(module, exports) {
+
+	var Text = function (options) {
+	  var self = this instanceof Text ? this : Object.create(Text.prototype);
+
+	  self.color = options.color;
+	  self.font = options.font || 32 + "px Arial";
+	  self.pos = options.pos;
+	  self.text = options.text;
+
+	  return self;
+	};
+
+	Text.prototype.draw = function (ctx) {
+	  ctx.fillStyle = this.color;
+	  ctx.font = this.font;
+	  ctx.fillText(this.text, this.pos[0], this.pos[1]);
+	};
+
+	Text.prototype.move = function () {};
+
+	module.exports = Text;
+
+/***/ },
+/* 4 */
+/***/ function(module, exports) {
+
+	var keys = {};
+
+	window.addEventListener("keydown", function (e) {
+	  keys[e.keyCode] = true;
+	});
+
+	window.addEventListener("keyup", function (e) {
+	  keys[e.keyCode] = false;
+	});
+
+	window.isKeyPressed = function (key) {
+	  return keys[key];
+	};
+
+/***/ },
+/* 5 */
 /***/ function(module, exports, __webpack_require__) {
 
-	var Util = __webpack_require__(4),
-	    MovingObject = __webpack_require__(5);
+	var Util = __webpack_require__(6),
+	    MovingObject = __webpack_require__(7);
 
 	var DrunkenBird = function (options) {
 	  var self = this instanceof DrunkenBird ? this : Object.create(DrunkenBird.prototype);
@@ -395,7 +466,7 @@
 	module.exports = DrunkenBird;
 
 /***/ },
-/* 4 */
+/* 6 */
 /***/ function(module, exports) {
 
 	var Util = function () {};
@@ -421,7 +492,7 @@
 	module.exports = Util;
 
 /***/ },
-/* 5 */
+/* 7 */
 /***/ function(module, exports) {
 
 	var MovingObject = function (options) {
@@ -463,14 +534,14 @@
 	module.exports = MovingObject;
 
 /***/ },
-/* 6 */
+/* 8 */
 /***/ function(module, exports, __webpack_require__) {
 
-	var Util = __webpack_require__(4),
-	    Bullet = __webpack_require__(7),
-	    DrunkenBird = __webpack_require__(3),
-	    MovingObject = __webpack_require__(5),
-	    Power = __webpack_require__(9),
+	var Util = __webpack_require__(6),
+	    Bullet = __webpack_require__(9),
+	    DrunkenBird = __webpack_require__(5),
+	    MovingObject = __webpack_require__(7),
+	    Power = __webpack_require__(10),
 	    Game = __webpack_require__(2);
 
 	var Ship = function (options) {
@@ -563,7 +634,7 @@
 
 	Ship.prototype.fireBullet._lastFire = Date.now();
 
-	Ship.prototype.collideWith = function (object) {
+	Ship.prototype.handleCollision = function (object) {
 	  if (this.hasCollision(object)) {
 	    if (object instanceof DrunkenBird) {
 	      if (!this.invulnerable) {
@@ -613,13 +684,13 @@
 	module.exports = Ship;
 
 /***/ },
-/* 7 */
+/* 9 */
 /***/ function(module, exports, __webpack_require__) {
 
-	var Util = __webpack_require__(4),
-	    Text = __webpack_require__(8),
-	    Power = __webpack_require__(9),
-	    MovingObject = __webpack_require__(5);
+	var Util = __webpack_require__(6),
+	    Text = __webpack_require__(3),
+	    Power = __webpack_require__(10),
+	    MovingObject = __webpack_require__(7);
 
 	var Bullet = function (options) {
 	  var self = this instanceof Bullet ? this : Object.create(Bullet.prototype);
@@ -638,7 +709,7 @@
 
 	Util.inherits(Bullet, MovingObject);
 
-	Bullet.prototype.collideWith = function (bird) {
+	Bullet.prototype.handleCollision = function (bird) {
 	  if (this.hasCollision(bird)) {
 	    var pos = bird.pos;
 	    this.relocate();
@@ -693,36 +764,11 @@
 	module.exports = Bullet;
 
 /***/ },
-/* 8 */
-/***/ function(module, exports) {
-
-	var Text = function (options) {
-	  var self = this instanceof Text ? this : Object.create(Text.prototype);
-
-	  self.color = options.color;
-	  self.font = options.font || 32 + "px Arial";
-	  self.pos = options.pos;
-	  self.text = options.text;
-
-	  return self;
-	};
-
-	Text.prototype.draw = function (ctx) {
-	  ctx.fillStyle = this.color;
-	  ctx.font = this.font;
-	  ctx.fillText(this.text, this.pos[0], this.pos[1]);
-	};
-
-	Text.prototype.move = function () {};
-
-	module.exports = Text;
-
-/***/ },
-/* 9 */
+/* 10 */
 /***/ function(module, exports, __webpack_require__) {
 
-	var Util = __webpack_require__(4),
-	    MovingObject = __webpack_require__(5);
+	var Util = __webpack_require__(6),
+	    MovingObject = __webpack_require__(7);
 
 	var Power = function (options) {
 	  var self = this instanceof Power ? this : Object.create(Power.prototype);
@@ -753,29 +799,11 @@
 	module.exports = Power;
 
 /***/ },
-/* 10 */
-/***/ function(module, exports) {
-
-	var keys = {};
-
-	window.addEventListener("keydown", function (e) {
-	  keys[e.keyCode] = true;
-	});
-
-	window.addEventListener("keyup", function (e) {
-	  keys[e.keyCode] = false;
-	});
-
-	window.isKeyPressed = function (key) {
-	  return keys[key];
-	};
-
-/***/ },
 /* 11 */
 /***/ function(module, exports, __webpack_require__) {
 
-	var Util = __webpack_require__(4),
-	    MovingObject = __webpack_require__(5);
+	var Util = __webpack_require__(6),
+	    MovingObject = __webpack_require__(7);
 
 	var Background = function (options) {
 	  var self = this instanceof Background ? this : Object.create(DrunkenBird.prototype);

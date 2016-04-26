@@ -238,53 +238,10 @@
 
 	Game.prototype.togglePause._lastPause = Date.now();
 
-	Game.prototype.removeObjects = function () {
-	  // this.birds.forEach(function (bird, i) {
-	  //   if (bird.pos[0] <= -100 || bird.pos[0] > (this.DIM_X + 100)) {
-	  //     this.birds.splice(i, 1);
-	  //   }
-	  //   else if (bird.pos[1] >= (this.DIM_Y + 100)) {
-	  //     this.birds.splice(i, 1);
-	  //   }
-	  // }.bind(this));
-	  //
-	  // this.bullets.forEach(function (bullet, i) {
-	  //   if (bullet.pos[0] < -5 || bullet.pos[0] > (this.DIM_X + 5)) {
-	  //     this.bullets.splice(i, 1);
-	  //   }
-	  //   else if (bullet.pos[1] >= (this.DIM_Y + 5) || bullet.pos[1] <= -5) {
-	  //     this.bullets.splice(i, 1);
-	  //   }
-	  // }.bind(this));
-	  //
-	  // this.powers.forEach(function (power, i) {
-	  //   if (power.pos[0] < -15 || power.pos[0] > (this.DIM_X + 15)) {
-	  //     this.powers.splice(i, 1);
-	  //   } else if (power.pos[1] > (this.DIM_Y + 15) || power.pos[1] < -15) {
-	  //     this.powers.splice(i, 1);
-	  //   }
-	  // }.bind(this));
-	  var j;
-	  var length = this.allObjects().length;
-
-	  this.allObjects().forEach(function (object, i) {
-	    j = i;
-
-	    if (!(object instanceof Background)) {
-	      if (this.outOfBounds(object)) {
-	        if (object instanceof Power) {
-	          j -= length - this.powers.length;
-	          this.powers.splice(j, 1);
-	        } else if (object instanceof DrunkenBird) {
-	          j -= length - this.birds.length;
-	          this.birds.splice(j, 1);
-	        } else if (object instanceof Bullet) {
-	          j -= length - this.bullets.length;
-	          this.bullets.splice(j, 1);
-	        }
-	      }
-	    }
-	  }.bind(this));
+	Game.prototype.removeAllObjects = function () {
+	  this.removeBullets();
+	  this.removeBirds();
+	  this.removePowers();
 	};
 
 	Game.prototype.allObjects = function () {
@@ -309,12 +266,42 @@
 	  }
 	};
 
+	Game.prototype.removePowers = function () {
+	  this.powers.forEach(function (power, i) {
+	    if (power.pos[0] < -15 || power.pos[0] > this.DIM_X + 15) {
+	      this.powers.splice(i, 1);
+	    } else if (power.pos[1] > this.DIM_Y + 15 || power.pos[1] < -15) {
+	      this.powers.splice(i, 1);
+	    }
+	  }.bind(this));
+	};
+
+	Game.prototype.removeBullets = function () {
+	  this.bullets.forEach(function (bullet, i) {
+	    if (bullet.pos[0] < -5 || bullet.pos[0] > this.DIM_X + 5) {
+	      this.bullets.splice(i, 1);
+	    } else if (bullet.pos[1] >= this.DIM_Y + 5 || bullet.pos[1] <= -5) {
+	      this.bullets.splice(i, 1);
+	    }
+	  }.bind(this));
+	};
+
+	Game.prototype.removeBirds = function () {
+	  this.birds.forEach(function (bird, i) {
+	    if (bird.pos[0] <= -100 || bird.pos[0] > this.DIM_X + 100) {
+	      this.birds.splice(i, 1);
+	    } else if (bird.pos[1] >= this.DIM_Y + 100) {
+	      this.birds.splice(i, 1);
+	    }
+	  }.bind(this));
+	};
+
 	Game.prototype.step = function (timeDelta) {
 	  if (!this.paused) {
 	    this.moveObjects(timeDelta);
 	    this.handleCollisions();
 	    this.updateStats();
-	    this.removeObjects();
+	    this.removeAllObjects();
 	  }
 	};
 
@@ -333,6 +320,34 @@
 	  this.paused = false;
 	  this.tick = 0;
 	  this.birds = this.addBirds();
+	};
+
+	Game.prototype.updateScore = function () {
+	  this.score += 100 * this.level;
+	  this.pointsUntilLevel -= 100 * this.level;
+	};
+
+	Game.prototype.hasLeveledUp = function () {
+	  return this.pointsUntilLevel <= 0;
+	};
+
+	Game.prototype.handleLevelUp = function () {
+	  this.level += 1;
+	  this.pointsUntilLevel += this.score * 1.2;
+
+	  if (!this.paused) {
+	    this.text = [new Text({
+	      color: "white",
+	      pos: [this.DIM_X / 2 - 50, this.DIM_Y / 2 + 16],
+	      text: "LEVEL " + this.level
+	    })];
+
+	    setTimeout(function () {
+	      if (!this.paused) {
+	        this.text = [];
+	      }
+	    }.bind(this), 3000);
+	  }
 	};
 
 	Game.prototype.handlePressedKeys = function () {
@@ -460,6 +475,23 @@
 	    this.img.src = "images/bird_sheet2.png";
 
 	    ctx.drawImage(this.img, this.srcX, this.srcY, 90, 108, this.pos[0] - 50, this.pos[1] - 50, 100, 100);
+	  }
+	};
+
+	DrunkenBird.prototype.handleHit = function (pos) {
+	  this.durability -= 1;
+	  if (this.durability <= 0) {
+	    this.relocate();
+	    this.dropPower(pos);
+	  }
+	};
+
+	DrunkenBird.prototype.dropPower = function (pos) {
+	  if (Math.random() <= 0.05) {
+	    this.game.powers.push(new Power({
+	      pos: pos,
+	      game: this.game
+	    }));
 	  }
 	};
 
@@ -713,39 +745,10 @@
 	  if (this.hasCollision(bird)) {
 	    var pos = bird.pos;
 	    this.relocate();
-	    bird.durability -= 1;
+	    bird.handleHit(pos);
 
-	    if (bird.durability <= 0) {
-	      bird.relocate();
-
-	      if (Math.random() <= 0.05) {
-	        this.game.powers.push(new Power({
-	          pos: pos,
-	          game: this.game
-	        }));
-	      }
-	    }
-
-	    this.game.score += 100 * this.game.level;
-	    this.game.pointsUntilLevel -= 100 * this.game.level;
-
-	    if (this.game.pointsUntilLevel <= 0) {
-	      this.game.level += 1;
-	      this.game.pointsUntilLevel += this.game.score * 1.2;
-
-	      if (!this.game.paused) {
-	        this.game.text = [new Text({
-	          color: "white",
-	          pos: [this.game.DIM_X / 2 - 50, this.game.DIM_Y / 2 + 16],
-	          text: "LEVEL " + this.game.level
-	        })];
-
-	        setTimeout(function () {
-	          if (!this.game.paused) {
-	            this.game.text = [];
-	          }
-	        }.bind(this), 3000);
-	      }
+	    if (this.game.hasLeveledUp()) {
+	      this.game.handleLevelUp();
 	    }
 	  }
 	};

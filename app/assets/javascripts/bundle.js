@@ -46,7 +46,7 @@
 
 	var GameView = __webpack_require__(1),
 	    Game = __webpack_require__(2),
-	    KeyHandler = __webpack_require__(10);
+	    KeyHandler = __webpack_require__(11);
 
 	var el = document.getElementsByTagName("body")[0],
 	    canvas = document.getElementById("myCanvas"),
@@ -76,7 +76,7 @@
 
 	var Game = __webpack_require__(2),
 	    Text = __webpack_require__(8),
-	    KeyHandler = __webpack_require__(10);
+	    KeyHandler = __webpack_require__(11);
 
 	var GameView = function (game, ctx) {
 	  var self = this instanceof GameView ? this : Object.create(GameView.prototype);
@@ -135,7 +135,8 @@
 	    Ship = __webpack_require__(6),
 	    Text = __webpack_require__(8),
 	    Util = __webpack_require__(4),
-	    Background = __webpack_require__(11),
+	    Background = __webpack_require__(10),
+	    Bullet = __webpack_require__(7),
 	    Power = __webpack_require__(9);
 
 	var Game = function () {
@@ -237,23 +238,35 @@
 
 	Game.prototype.togglePause._lastPause = Date.now();
 
-	Game.prototype.removeObjects = function () {
-	  this.birds.forEach(function (bird, i) {
-	    if (bird.pos[0] <= -100 || bird.pos[0] > this.DIM_X + 100) {
-	      this.birds.splice(i, 1);
-	    } else if (bird.pos[1] >= this.DIM_Y + 100) {
-	      this.birds.splice(i, 1);
-	    }
-	  }.bind(this));
+	Game.prototype.removeAllObjects = function () {
+	  this.removeBullets();
+	  this.removeBirds();
+	  this.removePowers();
+	};
 
-	  this.bullets.forEach(function (bullet, i) {
-	    if (bullet.pos[0] < -5 || bullet.pos[0] > this.DIM_X + 5) {
-	      this.bullets.splice(i, 1);
-	    } else if (bullet.pos[1] >= this.DIM_Y + 5 || bullet.pos[1] <= -5) {
-	      this.bullets.splice(i, 1);
-	    }
-	  }.bind(this));
+	Game.prototype.allObjects = function () {
+	  return [this.background].concat(this.birds, [this.ship], this.bullets, this.text, this.powers);
+	};
 
+	Game.prototype.outOfBounds = function (object) {
+	  return object.pos[0] < -object.radius || object.pos[0] > this.DIM_X + object.radius || object.pos[1] > this.DIM_Y + object.radius || object.pos[1] < -object.radius;
+	};
+
+	Game.prototype.handleCollisions = function () {
+	  for (var i = 0; i < this.bullets.length; i++) {
+	    for (var j = 0; j < this.birds.length; j++) {
+	      this.bullets[i].handleCollision(this.birds[j]);
+	    }
+	  }
+	  for (var k = 0; k < this.birds.length; k++) {
+	    this.ship.handleCollision(this.birds[k]);
+	  }
+	  for (var l = 0; l < this.powers.length; l++) {
+	    this.ship.handleCollision(this.powers[l]);
+	  }
+	};
+
+	Game.prototype.removePowers = function () {
 	  this.powers.forEach(function (power, i) {
 	    if (power.pos[0] < -15 || power.pos[0] > this.DIM_X + 15) {
 	      this.powers.splice(i, 1);
@@ -263,30 +276,32 @@
 	  }.bind(this));
 	};
 
-	Game.prototype.allObjects = function () {
-	  return [this.background].concat(this.birds, [this.ship], this.bullets, this.text, this.powers);
+	Game.prototype.removeBullets = function () {
+	  this.bullets.forEach(function (bullet, i) {
+	    if (bullet.pos[0] < -5 || bullet.pos[0] > this.DIM_X + 5) {
+	      this.bullets.splice(i, 1);
+	    } else if (bullet.pos[1] >= this.DIM_Y + 5 || bullet.pos[1] <= -5) {
+	      this.bullets.splice(i, 1);
+	    }
+	  }.bind(this));
 	};
 
-	Game.prototype.checkCollisions = function () {
-	  for (var i = 0; i < this.bullets.length; i++) {
-	    for (var j = 0; j < this.birds.length; j++) {
-	      this.bullets[i].collideWith(this.birds[j]);
+	Game.prototype.removeBirds = function () {
+	  this.birds.forEach(function (bird, i) {
+	    if (bird.pos[0] <= -100 || bird.pos[0] > this.DIM_X + 100) {
+	      this.birds.splice(i, 1);
+	    } else if (bird.pos[1] >= this.DIM_Y + 100) {
+	      this.birds.splice(i, 1);
 	    }
-	  }
-	  for (var k = 0; k < this.birds.length; k++) {
-	    this.ship.collideWith(this.birds[k]);
-	  }
-	  for (var l = 0; l < this.powers.length; l++) {
-	    this.ship.collideWith(this.powers[l]);
-	  }
+	  }.bind(this));
 	};
 
 	Game.prototype.step = function (timeDelta) {
 	  if (!this.paused) {
 	    this.moveObjects(timeDelta);
-	    this.checkCollisions();
+	    this.handleCollisions();
 	    this.updateStats();
-	    this.removeObjects();
+	    this.removeAllObjects();
 	  }
 	};
 
@@ -305,6 +320,34 @@
 	  this.paused = false;
 	  this.tick = 0;
 	  this.birds = this.addBirds();
+	};
+
+	Game.prototype.updateScore = function () {
+	  this.score += 100 * this.level;
+	  this.pointsUntilLevel -= 100 * this.level;
+	};
+
+	Game.prototype.hasLeveledUp = function () {
+	  return this.pointsUntilLevel <= 0;
+	};
+
+	Game.prototype.handleLevelUp = function () {
+	  this.level += 1;
+	  this.pointsUntilLevel += this.score * 1.2;
+
+	  if (!this.paused) {
+	    this.text = [new Text({
+	      color: "white",
+	      pos: [this.DIM_X / 2 - 50, this.DIM_Y / 2 + 16],
+	      text: "LEVEL " + this.level
+	    })];
+
+	    setTimeout(function () {
+	      if (!this.paused) {
+	        this.text = [];
+	      }
+	    }.bind(this), 3000);
+	  }
 	};
 
 	Game.prototype.handlePressedKeys = function () {
@@ -353,6 +396,7 @@
 /***/ function(module, exports, __webpack_require__) {
 
 	var Util = __webpack_require__(4),
+	    Power = __webpack_require__(9),
 	    MovingObject = __webpack_require__(5);
 
 	var DrunkenBird = function (options) {
@@ -389,6 +433,23 @@
 	    this.img.src = "images/bird_sheet2.png";
 
 	    ctx.drawImage(this.img, this.srcX, this.srcY, 90, 108, this.pos[0] - 50, this.pos[1] - 50, 100, 100);
+	  }
+	};
+
+	DrunkenBird.prototype.handleHit = function (pos) {
+	  this.durability -= 1;
+	  if (this.durability <= 0) {
+	    this.relocate();
+	    this.dropPower(pos);
+	  }
+	};
+
+	DrunkenBird.prototype.dropPower = function (pos) {
+	  if (Math.random() <= 0.05) {
+	    this.game.powers.push(new Power({
+	      pos: pos,
+	      game: this.game
+	    }));
 	  }
 	};
 
@@ -563,7 +624,7 @@
 
 	Ship.prototype.fireBullet._lastFire = Date.now();
 
-	Ship.prototype.collideWith = function (object) {
+	Ship.prototype.handleCollision = function (object) {
 	  if (this.hasCollision(object)) {
 	    if (object instanceof DrunkenBird) {
 	      if (!this.invulnerable) {
@@ -638,43 +699,14 @@
 
 	Util.inherits(Bullet, MovingObject);
 
-	Bullet.prototype.collideWith = function (bird) {
+	Bullet.prototype.handleCollision = function (bird) {
 	  if (this.hasCollision(bird)) {
 	    var pos = bird.pos;
 	    this.relocate();
-	    bird.durability -= 1;
+	    bird.handleHit(pos);
 
-	    if (bird.durability <= 0) {
-	      bird.relocate();
-
-	      if (Math.random() <= 0.05) {
-	        this.game.powers.push(new Power({
-	          pos: pos,
-	          game: this.game
-	        }));
-	      }
-	    }
-
-	    this.game.score += 100 * this.game.level;
-	    this.game.pointsUntilLevel -= 100 * this.game.level;
-
-	    if (this.game.pointsUntilLevel <= 0) {
-	      this.game.level += 1;
-	      this.game.pointsUntilLevel += this.game.score * 1.2;
-
-	      if (!this.game.paused) {
-	        this.game.text = [new Text({
-	          color: "white",
-	          pos: [this.game.DIM_X / 2 - 50, this.game.DIM_Y / 2 + 16],
-	          text: "LEVEL " + this.game.level
-	        })];
-
-	        setTimeout(function () {
-	          if (!this.game.paused) {
-	            this.game.text = [];
-	          }
-	        }.bind(this), 3000);
-	      }
+	    if (this.game.hasLeveledUp()) {
+	      this.game.handleLevelUp();
 	    }
 	  }
 	};
@@ -754,24 +786,6 @@
 
 /***/ },
 /* 10 */
-/***/ function(module, exports) {
-
-	var keys = {};
-
-	window.addEventListener("keydown", function (e) {
-	  keys[e.keyCode] = true;
-	});
-
-	window.addEventListener("keyup", function (e) {
-	  keys[e.keyCode] = false;
-	});
-
-	window.isKeyPressed = function (key) {
-	  return keys[key];
-	};
-
-/***/ },
-/* 11 */
 /***/ function(module, exports, __webpack_require__) {
 
 	var Util = __webpack_require__(4),
@@ -808,6 +822,24 @@
 	};
 
 	module.exports = Background;
+
+/***/ },
+/* 11 */
+/***/ function(module, exports) {
+
+	var keys = {};
+
+	window.addEventListener("keydown", function (e) {
+	  keys[e.keyCode] = true;
+	});
+
+	window.addEventListener("keyup", function (e) {
+	  keys[e.keyCode] = false;
+	});
+
+	window.isKeyPressed = function (key) {
+	  return keys[key];
+	};
 
 /***/ }
 /******/ ]);

@@ -226,7 +226,7 @@
 
 	    if (this.paused) {
 	      this.text = [new Text({
-	        color: "white",
+	        color: "black",
 	        pos: [this.DIM_X / 2 - 50, this.DIM_Y / 2 + 16],
 	        text: "PAUSED"
 	      })];

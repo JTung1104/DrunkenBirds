@@ -88,9 +88,5 @@ li {
 }
 
 .bg {
-  background: url(http://res.cloudinary.com/dsolojfgkabc/image/upload/v1457667728/phone-backgrounds-5_wrbymz.jpg) no-repeat center center fixed;
-  -webkit-background-size: cover;
-  -moz-background-size: cover;
-  -o-background-size: cover;
-  background-size: cover;
+  background-color: #EDEEEE;
 }

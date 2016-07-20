@@ -75,7 +75,7 @@
 /***/ function(module, exports, __webpack_require__) {
 
 	var Game = __webpack_require__(2),
-	    Text = __webpack_require__(8),
+	    Text = __webpack_require__(9),
 	    KeyHandler = __webpack_require__(11);
 
 	var GameView = function (game, ctx) {
@@ -132,12 +132,12 @@
 /***/ function(module, exports, __webpack_require__) {
 
 	var DrunkenBird = __webpack_require__(3),
-	    Ship = __webpack_require__(6),
-	    Text = __webpack_require__(8),
+	    Ship = __webpack_require__(7),
+	    Text = __webpack_require__(9),
 	    Util = __webpack_require__(4),
 	    Background = __webpack_require__(10),
-	    Bullet = __webpack_require__(7),
-	    Power = __webpack_require__(9);
+	    Bullet = __webpack_require__(8),
+	    Power = __webpack_require__(5);
 
 	var Game = function () {
 	  var self = this instanceof Game ? this : Object.create(Game.prototype);
@@ -226,7 +226,7 @@
 
 	    if (this.paused) {
 	      this.text = [new Text({
-	        color: "black",
+	        color: "white",
 	        pos: [this.DIM_X / 2 - 50, this.DIM_Y / 2 + 16],
 	        text: "PAUSED"
 	      })];
@@ -396,8 +396,8 @@
 /***/ function(module, exports, __webpack_require__) {
 
 	var Util = __webpack_require__(4),
-	    Power = __webpack_require__(9),
-	    MovingObject = __webpack_require__(5);
+	    Power = __webpack_require__(5),
+	    MovingObject = __webpack_require__(6);
 
 	var DrunkenBird = function (options) {
 	  var self = this instanceof DrunkenBird ? this : Object.create(DrunkenBird.prototype);
@@ -440,6 +440,7 @@
 	  this.durability -= 1;
 	  if (this.durability <= 0) {
 	    this.relocate();
+	    this.game.updateScore();
 	    this.dropPower(pos);
 	  }
 	};
@@ -483,6 +484,41 @@
 
 /***/ },
 /* 5 */
+/***/ function(module, exports, __webpack_require__) {
+
+	var Util = __webpack_require__(4),
+	    MovingObject = __webpack_require__(6);
+
+	var Power = function (options) {
+	  var self = this instanceof Power ? this : Object.create(Power.prototype);
+
+	  self.img = new Image();
+	  self.img.src = "images/power1.png";
+	  self.srcX = 0;
+	  self.srcY = 0;
+	  self.pos = options.pos;
+	  self.game = options.game;
+	  self.vel = [0, 1];
+	  self.radius = options.radius || Power.RADIUS;
+
+	  return self;
+	};
+
+	Power.RADIUS = 20;
+
+	Util.inherits(Power, MovingObject);
+
+	Power.prototype.draw = function (ctx) {
+	  var frame = Math.floor(this.game.tick / 10) % 4;
+	  this.img.src = "images/power" + (frame + 1) + ".png";
+
+	  ctx.drawImage(this.img, this.srcX, this.srcY, 30, 30, this.pos[0] - 20, this.pos[1] - 20, 40, 40);
+	};
+
+	module.exports = Power;
+
+/***/ },
+/* 6 */
 /***/ function(module, exports) {
 
 	var MovingObject = function (options) {
@@ -524,14 +560,14 @@
 	module.exports = MovingObject;
 
 /***/ },
-/* 6 */
+/* 7 */
 /***/ function(module, exports, __webpack_require__) {
 
 	var Util = __webpack_require__(4),
-	    Bullet = __webpack_require__(7),
+	    Bullet = __webpack_require__(8),
 	    DrunkenBird = __webpack_require__(3),
-	    MovingObject = __webpack_require__(5),
-	    Power = __webpack_require__(9),
+	    MovingObject = __webpack_require__(6),
+	    Power = __webpack_require__(5),
 	    Game = __webpack_require__(2);
 
 	var Ship = function (options) {
@@ -674,13 +710,13 @@
 	module.exports = Ship;
 
 /***/ },
-/* 7 */
+/* 8 */
 /***/ function(module, exports, __webpack_require__) {
 
 	var Util = __webpack_require__(4),
-	    Text = __webpack_require__(8),
-	    Power = __webpack_require__(9),
-	    MovingObject = __webpack_require__(5);
+	    Text = __webpack_require__(9),
+	    Power = __webpack_require__(5),
+	    MovingObject = __webpack_require__(6);
 
 	var Bullet = function (options) {
 	  var self = this instanceof Bullet ? this : Object.create(Bullet.prototype);
@@ -725,7 +761,7 @@
 	module.exports = Bullet;
 
 /***/ },
-/* 8 */
+/* 9 */
 /***/ function(module, exports) {
 
 	var Text = function (options) {
@@ -750,46 +786,11 @@
 	module.exports = Text;
 
 /***/ },
-/* 9 */
-/***/ function(module, exports, __webpack_require__) {
-
-	var Util = __webpack_require__(4),
-	    MovingObject = __webpack_require__(5);
-
-	var Power = function (options) {
-	  var self = this instanceof Power ? this : Object.create(Power.prototype);
-
-	  self.img = new Image();
-	  self.img.src = "images/power1.png";
-	  self.srcX = 0;
-	  self.srcY = 0;
-	  self.pos = options.pos;
-	  self.game = options.game;
-	  self.vel = [0, 1];
-	  self.radius = options.radius || Power.RADIUS;
-
-	  return self;
-	};
-
-	Power.RADIUS = 20;
-
-	Util.inherits(Power, MovingObject);
-
-	Power.prototype.draw = function (ctx) {
-	  var frame = Math.floor(this.game.tick / 10) % 4;
-	  this.img.src = "images/power" + (frame + 1) + ".png";
-
-	  ctx.drawImage(this.img, this.srcX, this.srcY, 30, 30, this.pos[0] - 20, this.pos[1] - 20, 40, 40);
-	};
-
-	module.exports = Power;
-
-/***/ },
 /* 10 */
 /***/ function(module, exports, __webpack_require__) {
 
 	var Util = __webpack_require__(4),
-	    MovingObject = __webpack_require__(5);
+	    MovingObject = __webpack_require__(6);
 
 	var Background = function (options) {
 	  var self = this instanceof Background ? this : Object.create(DrunkenBird.prototype);
